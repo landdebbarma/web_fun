@@ -11,9 +11,16 @@ const Navbar = () => {
     <nav className="w-full fixed -top-3 z-50 bg-transparent py-4">
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         {/* LEFT: Desktop Menu */}
-        <div className="hidden md:flex bg-white/10 backdrop-blur-2xl text-white rounded-full px-20 py-5 items-center gap-10">
-          <a href="/" className="text-2xl font-bold flex items-center gap-1">
-            AnToAnt <sup className="text-xs">®</sup>
+        <div className="hidden md:flex text-white rounded-full px-20 py-5 items-center gap-10">
+          <a href="/" className="flex items-center gap-2">
+            <img
+              src="/bglogo.png"
+              alt="AnToAnt Logo"
+              className="h-10 w-10 rounded-lg object-cover"
+            />
+            {/* <span className="text-2xl font-bold flex items-center gap-1">
+              AnToAnt <sup className="text-xs">®</sup>
+            </span> */}
           </a>
 
           <a
@@ -42,11 +49,15 @@ const Navbar = () => {
         {/* RIGHT SECTION */}
         <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
           {/* Mobile Logo */}
-          <a
-            href="/"
-            className="text-2xl font-bold text-white flex items-center gap-1 md:hidden"
-          >
-            AnToAnt <sup className="text-xs">™</sup>
+          <a href="/" className="flex items-center gap-2 md:hidden">
+            <img
+              src="/logo.jpeg"
+              alt="AnToAnt Logo"
+              className="h-9 w-9 rounded-lg object-cover"
+            />
+            <span className="text-2xl font-bold text-white flex items-center gap-1">
+              AnToAnt <sup className="text-xs">™</sup>
+            </span>
           </a>
 
           {/* Desktop Buttons */}

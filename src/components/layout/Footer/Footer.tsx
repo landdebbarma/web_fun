@@ -1,6 +1,7 @@
 import React from "react";
 import { Instagram, Linkedin, Github } from "lucide-react";
 import { motion } from "framer-motion";
+import { GlitchSwap } from "../../ui/glitch-swap";
 
 // Link Data Configuration
 const footerLinks = {
@@ -40,13 +41,16 @@ const Footer: React.FC = () => {
       {/* Main Footer Card */}
       <div className="relative z-10 w-full max-w-[1200px] bg-black shadow-white rounded-[2.5rem] shadow-xl p-8 md:p-12 lg:p-16">
         {/* Background Watermark */}
-        <div className="absolute top-[200px] left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none z-0 hidden md:block ">
-          <span className="text-[20vw] font-bold text-gray-200/20 tracking-tighter mix-blend-overlay">
-            AnToAnt
-          </span>
+        <div className="absolute top-[200px] left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none z-0 hidden md:block w-full text-center">
+          <GlitchSwap
+            text="AnToAnt"
+            logoSrc="/bglogo.png"
+            className="text-[20vw] font-bold text-gray-200/20 tracking-tighter mix-blend-overlay"
+            logoClassName="w-[20vw] h-[20vw] mx-auto opacity-20 mix-blend-overlay"
+          />
         </div>
         {/* Top Section */}
-        <div className="flex flex-col lg:flex-row justify-between gap-12 lg:gap-24">
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-12 lg:gap-24">
           {/* Brand Column */}
           <div className="flex flex-col max-w-sm">
             {/* Logo */}

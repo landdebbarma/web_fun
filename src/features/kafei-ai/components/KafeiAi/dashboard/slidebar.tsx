@@ -183,13 +183,11 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
 
         {/* LOGO */}
         <div className="flex items-center gap-3 mb-10 p-6">
-          <div
-            className={`w-7 h-7 rounded-2xl flex items-center justify-center font-bold shadow-md flex-shrink-0 ${
-              isDarkMode ? "bg-white text-black" : "bg-black text-white"
-            }`}
-          >
-            A
-          </div>
+          <img
+            src="/logo.jpeg"
+            alt="AnToAnt Logo"
+            className="w-10 h-10 rounded-2xl object-cover shadow-md flex-shrink-0"
+          />
 
           <h2
             className={`font-semibold text-xl tracking-wide whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
@@ -374,7 +372,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
         <div
           className={`absolute bottom-0 left-0 right-0 border-t ${
             isDarkMode ? "border-white/10 bg-black" : "border-gray-200 bg-white"
-          } ${open ? "p-4" : "py-4 left-5 flex justify-center items-center"}`}
+          } ${open ? "p-4" : "p-4 justify-center items-center"}`}
         >
           {/* Dropdown Menu - Only show when sidebar is expanded */}
           {open && (
@@ -459,7 +457,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
               }
             `}
           >
-            <div className="flex items-center gap-3">
+            <div className={`flex items-center ${open ? "gap-3" : "gap-0"}`}>
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                   isDarkMode
@@ -493,10 +491,12 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
               </div>
             </div>
             <svg
-              className={`w-4 h-4 flex-shrink-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              className={`flex-shrink-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 dropdownOpen ? "rotate-180" : "rotate-0"
               } ${isDarkMode ? "text-white/50" : "text-gray-400"} ${
-                open ? "opacity-100 delay-200" : "opacity-0 delay-0"
+                open
+                  ? "opacity-100 w-4 h-4 ml-2 delay-200"
+                  : "opacity-0 w-0 h-0 ml-0 delay-0"
               }`}
               fill="none"
               viewBox="0 0 24 24"
