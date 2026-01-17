@@ -1,9 +1,10 @@
 import { Navbar, Footer } from "@/components/layout";
 import { SEO } from "@/components/common";
-import { ArrowRight, Users, Target, Lightbulb, Heart } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TestimonialsEditorial from "@/components/ui/TestimonialsEditorial";
 import { motion } from "framer-motion";
+import { ValuesBento } from "@/components/ui/ValuesBento";
 
 const AboutUs = () => {
   const navigate = useNavigate();
@@ -15,35 +16,11 @@ const AboutUs = () => {
     { value: "24/7", label: "Support" },
   ];
 
-  const values = [
-    {
-      icon: <Lightbulb className="w-8 h-8" />,
-      title: "Innovation",
-      description:
-        "Pushing boundaries and exploring new possibilities in AI technology",
-    },
-    {
-      icon: <Users className="w-8 h-8" />,
-      title: "Collaboration",
-      description: "Building together with our community and partners",
-    },
-    {
-      icon: <Target className="w-8 h-8" />,
-      title: "Excellence",
-      description: "Delivering quality and reliability in everything we create",
-    },
-    {
-      icon: <Heart className="w-8 h-8" />,
-      title: "Passion",
-      description: "Driven by our love for technology and making an impact",
-    },
-  ];
-
   return (
     <>
       <SEO
         title="About Us"
-        description="Learn about Kafei's mission to revolutionize commerce with AI. Meet our team, discover our values, and join us in building the future."
+        description="Learn about AnToAnt's mission to revolutionize commerce with AI. Meet our team, discover our values, and join us in building the future."
         canonical="/about"
       />
       <div className="relative w-full min-h-screen bg-black text-white overflow-hidden">
@@ -71,7 +48,7 @@ const AboutUs = () => {
               className="text-center"
             >
               <h1 className="text-6xl md:text-8xl font-bold mb-6 text-white">
-                About <span className="text-gray-500">KAFEI</span>
+                About <span className="text-gray-500">AnToAnt</span>
               </h1>
               <p className="text-xl md:text-2xl text-gray-500 max-w-3xl mx-auto">
                 Building the future of AI-powered solutions, one innovation at a
@@ -92,7 +69,7 @@ const AboutUs = () => {
                   Our Mission
                 </h2>
                 <p className="text-lg text-gray-500 mb-6">
-                  At KAFEI, we're revolutionizing the way businesses interact
+                  At AnToAnt, we're revolutionizing the way businesses interact
                   with AI technology. Our mission is to make advanced AI
                   accessible, intuitive, and powerful for everyone.
                 </p>
@@ -110,7 +87,7 @@ const AboutUs = () => {
                 className="relative"
               >
                 <div className="absolute -inset-1 bg-gray-800 rounded-3xl blur-2xl opacity-50" />
-                <div className="relative bg-gray-900 border border-gray-800 rounded-3xl p-12">
+                <div className="relative bg-black border border-gray-800 rounded-3xl p-12">
                   <div className="grid grid-cols-2 gap-8">
                     {stats.map((stat, index) => (
                       <motion.div
@@ -144,29 +121,7 @@ const AboutUs = () => {
             >
               Our Values
             </motion.h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {values.map((value, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 + index * 0.1 }}
-                  whileHover={{ scale: 1.02, y: -5 }}
-                  className="group relative"
-                >
-                  <div className="absolute -inset-0.5 bg-gray-700 rounded-2xl blur opacity-0 group-hover:opacity-40 transition duration-500" />
-                  <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-8 h-full hover:border-gray-700 transition-all duration-300">
-                    <div className="text-white mb-4 group-hover:scale-110 transition-transform duration-300">
-                      {value.icon}
-                    </div>
-                    <h3 className="text-2xl font-bold mb-3 text-white">
-                      {value.title}
-                    </h3>
-                    <p className="text-gray-500">{value.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <ValuesBento />
           </section>
 
           {/* Team Section */}
@@ -201,7 +156,7 @@ const AboutUs = () => {
                   Ready to Start Building?
                 </h2>
                 <p className="text-xl text-gray-500 mb-8 max-w-2xl mx-auto">
-                  Join thousands of developers already using KAFEI to power
+                  Join thousands of developers already using AnToAnt to power
                   their AI applications
                 </p>
                 <motion.button

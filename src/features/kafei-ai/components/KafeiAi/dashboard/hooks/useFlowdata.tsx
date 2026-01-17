@@ -7,7 +7,7 @@ type ComponentTree = {
   files?: string[];
 };
 
-type AIResult = {
+export type AIResult = {
   system_design?: string;
   component_tree?: ComponentTree;
   architecture?: string;

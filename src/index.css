@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .animate-move-right {
+    animation: moveRight 3s linear infinite;
+  }
+  .animate-move-down {
+    animation: moveDown 3s linear infinite;
+    animation-delay: 0.75s; /* Quarter of the time if equal length, or adjust for aspect ratio */
+  }
+  .animate-move-left {
+    animation: moveLeft 3s linear infinite;
+    animation-delay: 1.5s;
+  }
+  .animate-move-up {
+    animation: moveUp 3s linear infinite;
+    animation-delay: 2.25s;
+  }
+}
+
+@keyframes moveRight {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes moveDown {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+@keyframes moveLeft {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+@keyframes moveUp {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(-100%); }
+}
+
 /* Global Typography - Using Funnel Display & Funnel Sans */
 * {
   font-family: "Funnel Sans", sans-serif;

@@ -4,11 +4,13 @@ import * as THREE from "three";
 interface CompactAnimatedSphereProps {
   size?: number;
   color?: string;
+  isAnimating?: boolean;
 }
 
 const CompactAnimatedSphere: React.FC<CompactAnimatedSphereProps> = ({
   size = 40,
   color = "#ffffff",
+  isAnimating = false,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -111,14 +113,20 @@ const CompactAnimatedSphere: React.FC<CompactAnimatedSphereProps> = ({
     scene.add(mesh);
 
     let frameId: number;
-    const animate = (t: number) => {
-      material.uniforms.time.value = t * 0.0005;
-      mesh.rotation.y += 0.008;
-      mesh.rotation.x += 0.004;
+    let t = 0;
+    const animate = () => {
+      // Only increment time/rotation if isAnimating is true
+      if (isAnimating) {
+        t += 1;
+        material.uniforms.time.value = t * 0.0005;
+        mesh.rotation.y += 0.008;
+        mesh.rotation.x += 0.004;
+      }
+
       renderer.render(scene, camera);
       frameId = requestAnimationFrame(animate);
     };
-    animate(0);
+    animate();
 
     return () => {
       cancelAnimationFrame(frameId);
@@ -129,7 +137,7 @@ const CompactAnimatedSphere: React.FC<CompactAnimatedSphereProps> = ({
       material.dispose();
       renderer.dispose();
     };
-  }, [size, color]);
+  }, [size, color, isAnimating]);
 
   return (
     <div

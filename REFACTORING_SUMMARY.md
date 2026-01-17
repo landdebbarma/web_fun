@@ -2,7 +2,7 @@
 
 ## 🎉 Congratulations!
 
-Your Kafei Landing Page now has a **professional, industry-standard folder structure** used by companies like Airbnb, Uber, Netflix, and Vercel!
+Your AnToAnt Landing Page now has a **professional, industry-standard folder structure** used by companies like Airbnb, Uber, Netflix, and Vercel!
 
 ## 📊 Summary of Changes
 
@@ -16,7 +16,7 @@ Your Kafei Landing Page now has a **professional, industry-standard folder struc
 4. `src/components/common/` - Common components
 5. `src/features/home/components/` - Home feature
 6. `src/features/pricing/components/` - Pricing feature
-7. `src/features/kafei-ai/components/` - Kafei AI feature
+7. `src/features/AnToAnt-ai/components/` - AnToAnt AI feature
 8. `src/features/wishlist/components/` - Wishlist feature
 9. `src/pages/` - Page components
 10. `src/types/` - TypeScript types
@@ -47,7 +47,7 @@ Your Kafei Landing Page now has a **professional, industry-standard folder struc
 - ✅ CTA → `features/home/components/CTA/`
 - ✅ PricingDemo → `features/pricing/components/PricingDemo/`
 - ✅ PricingContainer → `features/pricing/components/PricingContainer/`
-- ✅ KafeiAi → `features/kafei-ai/components/`
+- ✅ AnToAntAi → `features/AnToAnt-ai/components/`
 - ✅ Wishlist → `features/wishlist/components/`
 
 ### ⚙️ Configuration Updates
@@ -210,12 +210,12 @@ src/                           src/
 │   ├── navbar/                │   └── providers/
 │   ├── ui/                    ├── components/
 │   ├── page/                  │   ├── layout/
-│   └── KafeiAi/               │   ├── common/
+│   └── AnToAntAi/               │   ├── common/
 ├── lib/                       │   └── ui/
 └── ...                        ├── features/
                                │   ├── home/
                                │   ├── pricing/
-                               │   ├── kafei-ai/
+                               │   ├── AnToAnt-ai/
                                │   └── wishlist/
                                ├── pages/
                                ├── types/

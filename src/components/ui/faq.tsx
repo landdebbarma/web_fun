@@ -221,7 +221,7 @@ export default function FAQWithSpiral() {
   const faqs = [
     {
       q: "Is this AI generated?",
-      a: "Yes. Kafei uses AI to generate system design, architecture structure, and supporting guides However, the output is designed to be practical, structured, and understandable — not random or black-box content.",
+      a: "Yes. AnToAnt uses AI to generate system design, architecture structure, and supporting guides However, the output is designed to be practical, structured, and understandable — not random or black-box content.",
     },
     {
       q: "Can I edit the system design?",
@@ -229,35 +229,35 @@ export default function FAQWithSpiral() {
     },
     {
       q: "Is this beginner-friendly?",
-      a: "Absolutely.Kafei is built to help beginners understand why a system is designed a certain way — not just give code. At the same time, it’s structured enough to be useful for experienced developers..",
+      a: "Absolutely.AnToAnt is built to help beginners understand why a system is designed a certain way — not just give code. At the same time, it’s structured enough to be useful for experienced developers..",
     },
     {
       q: "Can I use this for client projects?",
-      a: "Yes.You can use Kafei-generated designs and code for commercial and client work without restrictions.",
+      a: "Yes.You can use AnToAnt-generated designs and code for commercial and client work without restrictions.",
     },
     {
       q: "Will more stacks be added?",
-      a: "Yes.Kafei currently supports a limited set of stacks, and more frontend, backend, and database stacks will be added over time.",
+      a: "Yes.AnToAnt currently supports a limited set of stacks, and more frontend, backend, and database stacks will be added over time.",
     },
     {
       q: "What happens after the free tier?",
-      a: "The free tier gives you one non-editable project to explore Kafei.If you want to create more projects, edit designs, or access advanced features, you can upgrade anytime.",
+      a: "The free tier gives you one non-editable project to explore AnToAnt.If you want to create more projects, edit designs, or access advanced features, you can upgrade anytime.",
     },
     {
-      q: "Do I need to be good at system design to use Kafei?",
-      a: "No.Kafei is meant to guide you through system design, even if you’re new to it.",
+      q: "Do I need to be good at system design to use AnToAnt?",
+      a: "No.AnToAnt is meant to guide you through system design, even if you’re new to it.",
     },
     {
       q: "Is this a code generator or a learning tool?",
-      a: "Both.Kafei helps you generate a working foundation and understand the architectural decisions behind it.",
+      a: "Both.AnToAnt helps you generate a working foundation and understand the architectural decisions behind it.",
     },
     {
       q: "Can I download the generated project?",
       a: "Yes.You can download the full project — including code, diagrams, and guides — as a ZIP file (paid plans).",
     },
     {
-      q: "Is Kafei meant to replace developers?",
-      a: "No.Kafei supports developers by improving clarity and decision-making — it doesn’t replace problem-solving or customization.",
+      q: "Is AnToAnt meant to replace developers?",
+      a: "No.AnToAnt supports developers by improving clarity and decision-making — it doesn’t replace problem-solving or customization.",
     },
   ];
 
@@ -295,7 +295,7 @@ export default function FAQWithSpiral() {
               FAQ
             </h1>
             <p className="mt-2 text-sm md:text-base text-white/70">
-              Frequently Asked Questions at kafei.com
+              Frequently Asked Questions at AnToAnt.com
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -310,7 +310,7 @@ export default function FAQWithSpiral() {
 
         {/* Content */}
         <section className="relative">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 items-start">
             {filtered.map((item, i) => (
               <FAQItem key={i} q={item.q} a={item.a} index={i + 1} />
             ))}

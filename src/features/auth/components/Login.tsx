@@ -1,6 +1,8 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/app/providers/AuthProvider";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/app/providers/useAuth";
+import { authService } from "@/services/auth";
+import { ROUTES } from "@/constants/routes";
 import { FloatingPaths } from "@/components/ui/BackgroundPaths";
 // import { motion } from "framer-motion";
 import { InteractiveCharacterPolished } from "@/components/ui/InteractiveCharacter";
@@ -74,10 +76,26 @@ const Logo = () => (
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read logout message from URL params
+  useEffect(() => {
+    const message = searchParams.get("message");
+    if (message) {
+      setSuccessMessage(message);
+      // Clear the URL param without navigation
+      setSearchParams({}, { replace: true });
+      // Auto-clear success message after 5 seconds
+      const timer = setTimeout(() => setSuccessMessage(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, setSearchParams]);
 
   // --- 2. Initialize State with a Random Greeting ---
   const [greeting] = useState(() => {
@@ -97,43 +115,16 @@ const LoginPage = () => {
     setLoading(true);
     setError("");
 
-    console.log("Logging in with:", { email, password });
-
     try {
-      const response = await fetch("/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password.trim(),
-        }),
+      const data = await authService.login({
+        email: email.trim(),
+        password: password.trim(),
       });
 
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
-
-      const data = await response.json();
-      console.log("Response data:", data);
-
-      if (!response.ok) {
-        if (data.detail && Array.isArray(data.detail)) {
-          const errorMessages = data.detail
-            .map((err: { msg: string }) => err.msg)
-            .join(", ");
-          throw new Error(errorMessages || "Login failed");
-        }
-        throw new Error(data?.message || data?.detail || "Login failed");
-      }
-
-      // Try to extract token from common fields
       const authToken =
         data?.token ||
         data?.access_token ||
         data?.accessToken ||
-        data?.accessToken?.token ||
         data?.data?.token ||
         null;
 
@@ -141,7 +132,7 @@ const LoginPage = () => {
         // If server didn't return a token but returned user, we can proceed cautiously
         if (data?.user) {
           login(null, data.user);
-          navigate("/dashboard");
+          navigate(ROUTES.DASHBOARD);
           return;
         }
         throw new Error(
@@ -150,45 +141,96 @@ const LoginPage = () => {
       }
 
       // Verify token with /users/me and store user via AuthProvider
-      const meResponse = await fetch("/users/me", {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      if (meResponse.ok) {
-        const meData = await meResponse.json();
+      try {
+        const meData = await authService.getCurrentUser(authToken);
         login(authToken, meData);
-        navigate("/dashboard");
+        navigate(ROUTES.DASHBOARD);
         return;
-      }
+      } catch (meError: unknown) {
+        const errorObj = meError as {
+          data?: { detail?: string };
+          message?: string;
+        };
+        const detail = errorObj?.data?.detail || errorObj?.message || null;
 
-      const meError = await meResponse.json().catch(() => ({}));
-      const detail = meError?.detail || meError?.message || null;
+        // Clean up any stale token if backend reports invalid/expired token
+        if (
+          detail &&
+          /invalid|expired|not authenticated/i.test(String(detail))
+        ) {
+          localStorage.removeItem("auth_token");
+        }
 
-      // Clean up any stale token if backend reports invalid/expired token
-      if (detail && /invalid|expired|not authenticated/i.test(String(detail))) {
-        localStorage.removeItem("auth_token");
-      }
+        if (detail === "Not authenticated") {
+          throw new Error(
+            "User not authenticated. Please register or check credentials."
+          );
+        }
 
-      if (detail === "Not authenticated") {
         throw new Error(
-          "User not authenticated. Please register or check credentials."
+          String(data?.message || detail || "Login failed to validate user")
         );
       }
-
-      throw new Error(
-        data?.message || detail || "Login failed to validate user"
-      );
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Login failed";
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      const errorMessage = errorObj?.message || "Login failed";
       setError(errorMessage);
-      console.error("Login error:", errorMessage);
-      console.error("Full error:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Listen for postMessage from Google OAuth callback
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      // Only accept messages from our own origin
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data?.type === "GOOGLE_AUTH_SUCCESS") {
+        const token = event.data.token;
+        if (token) {
+          try {
+            // Store token in cookie
+            const Cookies = await import("js-cookie");
+            Cookies.default.set("auth_token", token, {
+              expires: 7,
+              secure: window.location.protocol === "https:",
+              sameSite: "strict",
+            });
+
+            // Get user data and redirect
+            const userData = await authService.getCurrentUser(token);
+            login(token, userData);
+            navigate(ROUTES.DASHBOARD, { replace: true });
+          } catch (err) {
+            console.error("Failed to complete Google login:", err);
+            setError("Login failed. Please try again.");
+          }
+        }
+      } else if (event.data?.type === "GOOGLE_AUTH_ERROR") {
+        setError(event.data.error || "Google login failed");
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [login, navigate]);
+
+  const handleGoogleLogin = () => {
+    const width = 500;
+    const height = 600;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+
+    const popup = window.open(
+      "/auth/google/login",
+      "google_login",
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+
+    if (!popup) {
+      setError("Please allow popups to login with Google");
+      return;
     }
   };
 
@@ -221,6 +263,12 @@ const LoginPage = () => {
           </div>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
+            {successMessage && (
+              <div className="w-full bg-green-500/10 border border-green-500/20 text-green-700 rounded-2xl py-3 px-5 text-sm flex items-center gap-2">
+                <span className="block w-1.5 h-1.5 rounded-full bg-green-500" />
+                {successMessage}
+              </div>
+            )}
             {error && (
               <div className="w-full bg-red-500/10 border border-red-500/20 text-red-200 rounded-2xl py-3 px-5 text-sm flex items-center gap-2 animate-pulse">
                 <span className="block w-1.5 h-1.5 rounded-full bg-red-400" />
@@ -238,15 +286,59 @@ const LoginPage = () => {
                 disabled={loading}
                 className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-4 px-6 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
               />
-              <input
-                type="password"
-                required
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-4 px-6 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-4 px-6 pr-12 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black transition-colors"
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <button
@@ -293,7 +385,11 @@ const LoginPage = () => {
           </div>
 
           <div className="flex items-center gap-4 justify-center">
-            <button className="flex-1 flex items-center justify-center gap-3 bg-white/5 border border-black rounded-xl py-3 hover:bg-white/10 transition-colors group">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="flex-1 flex items-center justify-center gap-3 bg-white/5 border border-black rounded-xl py-3 hover:bg-white/10 transition-colors group"
+            >
               <div className="group-hover:scale-110 transition-transform duration-200">
                 <GoogleIcon />
               </div>

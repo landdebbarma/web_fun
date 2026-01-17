@@ -1,7 +1,7 @@
 # 🚀 /generate/ API Integration Guide
 
 **Created:** 2025-12-24  
-**Project:** Kafei Landing Page - AI Dashboard
+**Project:** AnToAnt Landing Page - AI Dashboard
 
 ---
 
@@ -104,7 +104,7 @@ This routes all `/generate/` requests from localhost:5173 → localhost:8006
 
 ### Location
 
-**File:** `src/features/kafei-ai/components/KafeiAi/dashboard/main.tsx`
+**File:** `src/features/AnToAnt-ai/components/AnToAntAi/dashboard/main.tsx`
 
 ### How It Works
 

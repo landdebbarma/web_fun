@@ -1,4 +1,4 @@
-# Kafei Landing Page - Professional Folder Structure
+# AnToAnt Landing Page - Professional Folder Structure
 
 ## 📁 Project Structure
 
@@ -42,7 +42,7 @@ src/
 │   │       ├── PricingDemo/
 │   │       └── PricingContainer/
 │   │
-│   ├── kafei-ai/                 # Kafei AI feature
+│   ├── AnToAnt-ai/                 # AnToAnt AI feature
 │   │   └── components/
 │   │
 │   └── wishlist/                 # Wishlist feature
@@ -147,7 +147,7 @@ import { Hero, Bento, Product, CTA } from "@/features/home/components";
 - **Utilities**: camelCase (e.g., `utils.ts`, `formatters.ts`)
 - **Constants**: camelCase (e.g., `routes.ts`, `config.ts`)
 - **Types**: camelCase (e.g., `components.ts`, `api.ts`)
-- **Folders**: kebab-case for features (e.g., `kafei-ai/`), PascalCase for components (e.g., `Hero/`)
+- **Folders**: kebab-case for features (e.g., `AnToAnt-ai/`), PascalCase for components (e.g., `Hero/`)
 
 ### Code
 

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { authService } from "@/services/auth";
+import { ROUTES } from "@/constants/routes";
 import { FloatingPaths } from "@/components/ui/BackgroundPaths";
 import { InteractiveCharacterPolished } from "@/components/ui/InteractiveCharacter";
 
@@ -8,7 +10,7 @@ import { InteractiveCharacterPolished } from "@/components/ui/InteractiveCharact
    ICONS & ASSETS
 ================================================== */
 const GoogleIcon = () => (
- <svg
+  <svg
     xmlns="http://www.w3.org/2000/svg"
     width="16"
     height="16"
@@ -21,7 +23,7 @@ const GoogleIcon = () => (
 );
 
 const AppleIcon = () => (
-   <svg
+  <svg
     xmlns="http://www.w3.org/2000/svg"
     width="16"
     height="16"
@@ -67,6 +69,7 @@ const SignUpPage = () => {
     password: "",
     phone: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -83,66 +86,63 @@ const SignUpPage = () => {
       return;
     }
 
+    const password = formData.password.trim();
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError("Password must contain at least one uppercase letter");
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError("Password must contain at least one lowercase letter");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError("Password must contain at least one number");
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      setError(
+        "Password must contain at least one special character (!@#$%^&*...)"
+      );
+      return;
+    }
+
     setLoading(true);
     setError("");
-
-    console.log("Starting registration with:", formData);
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch("/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
+      const data = await authService.register(
+        {
           name: formData.name.trim(),
           email: formData.email.trim(),
           password: formData.password.trim(),
           phone: formData.phone.trim(),
-        }),
-        signal: controller.signal,
-      });
+        },
+        controller.signal
+      );
 
       clearTimeout(timeoutId);
 
-      let data;
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = {};
-      }
-
-      if (!response.ok) {
-        if (data.detail && Array.isArray(data.detail)) {
-          const errorMessages = data.detail
-            .map((err: { msg: string }) => err.msg)
-            .join(", ");
-          throw new Error(errorMessages || "Validation error");
-        }
-        throw new Error(data?.message || `Server error: ${response.status}`);
-      }
-
-      console.log("Registration successful:", data);
       // Clear any stale tokens that might block subsequent login attempts
       localStorage.removeItem("auth_token");
       localStorage.setItem("user_data", JSON.stringify(data));
       navigate("/login");
-    } catch (err) {
+    } catch (err: unknown) {
       let errorMessage = "Registration failed";
 
       if (err instanceof TypeError) {
         errorMessage = "Cannot connect to server. Check your connection.";
-      } else if (err instanceof Error) {
-        if (err.name === "AbortError") {
-          errorMessage = "Request timeout - server is not responding";
-        } else {
-          errorMessage = err.message;
-        }
+      } else if ((err as { name?: string }).name === "AbortError") {
+        errorMessage = "Request timeout - server is not responding";
+      } else {
+        errorMessage =
+          (err as { message?: string }).message || "Registration failed";
       }
 
       setError(errorMessage);
@@ -150,6 +150,56 @@ const SignUpPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    const width = 500;
+    const height = 600;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+
+    const popup = window.open(
+      "/auth/google/login",
+      "google_login",
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+
+    if (!popup) {
+      setError("Please allow popups to sign up with Google");
+      return;
+    }
+
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
+        window.removeEventListener("message", handleMessage);
+
+        const token = event.data.token;
+        try {
+          localStorage.removeItem("auth_token");
+          const meData = await authService.getCurrentUser(token);
+          localStorage.setItem("auth_token", token);
+          localStorage.setItem("user_data", JSON.stringify(meData));
+          navigate(ROUTES.DASHBOARD);
+          window.location.reload();
+        } catch {
+          setError("Login failed. Please try again.");
+        }
+      } else if (event.data.type === "GOOGLE_AUTH_ERROR") {
+        window.removeEventListener("message", handleMessage);
+        setError("Google login failed. Please try again.");
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    // Cleanup after 2 minutes if no response
+    setTimeout(() => {
+      window.removeEventListener("message", handleMessage);
+    }, 120000);
   };
 
   return (
@@ -227,17 +277,61 @@ const SignUpPage = () => {
               className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-3.5 px-6 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
             />
 
-            <input
-              type="password"
-              placeholder="Password"
-              required
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              disabled={loading}
-              className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-3.5 px-6 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                required
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                disabled={loading}
+                className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-3.5 px-6 pr-12 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black transition-colors"
+              >
+                {showPassword ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
 
             <button
               type="submit"
@@ -283,7 +377,11 @@ const SignUpPage = () => {
           </div>
 
           <div className="flex items-center gap-4 justify-center">
-            <button className="flex-1 flex items-center justify-center gap-3 bg-white/5 border border-black rounded-xl py-3 hover:bg-white/10 transition-colors group">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="flex-1 flex items-center justify-center gap-3 bg-white/5 border border-black rounded-xl py-3 hover:bg-white/10 transition-colors group"
+            >
               <div className="group-hover:scale-110 transition-transform duration-200">
                 <GoogleIcon />
               </div>

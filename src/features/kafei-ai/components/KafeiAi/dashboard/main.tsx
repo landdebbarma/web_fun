@@ -9,6 +9,9 @@ import "reactflow/dist/style.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { useFlowData } from "./hooks/useFlowdata";
 import { useChatMessages } from "./hooks/useChatMessages";
+import type { AIResult } from "./hooks/useFlowdata";
+import { chatService } from "@/services/chat";
+import { projectService } from "@/services/project";
 import InfoNode from "../InfoNode";
 import CompactAnimatedSphere from "@/components/ui/CompactAnimatedSphere";
 import { useDarkMode } from "./useDarkMode";
@@ -17,11 +20,15 @@ const nodeTypes = { infoNode: InfoNode };
 
 // Inner component that uses the dark mode context (must be inside DarkModeProvider)
 const DashboardContent: React.FC = () => {
-  const { nodes, edges, onNodesChange, onEdgesChange } = useFlowData();
+  const { nodes, edges, onNodesChange, onEdgesChange, updateFlowFromAI } =
+    useFlowData();
   const { messages, addMessage } = useChatMessages();
 
   const [aiText, setAiText] = useState("");
+  const [docData, setDocData] = useState<AIResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Auto resize textarea
@@ -55,63 +62,237 @@ const DashboardContent: React.FC = () => {
     if (!downloadUrl) return;
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.download = "kafei-project.zip";
+    link.download = "AnToAnt-project.zip";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Send message to backend API
-  const sendMessage = () => {
+  // Send message to backend API - only using /chat/ endpoint
+  const sendMessage = async () => {
     if (!aiText.trim()) return;
 
     const userMsg = aiText.trim();
     addMessage(userMsg, "user");
     setAiText("");
 
-    // All messages go through the backend /chat/ API
-    handleNormalChat(userMsg);
+    // On first message, create project and conversation
+    if (!projectId) {
+      try {
+        // Create project with user's first message as name
+        const projectName = userMsg.slice(0, 50); // Use first 50 chars as project name
+        const project = await projectService.createProject({
+          name: projectName,
+          description: userMsg,
+        });
+        setProjectId(project.id);
+
+        // Create conversation within the project
+        const conversation = await projectService.createConversation(
+          project.id,
+          {
+            title: projectName,
+          }
+        );
+        setConversationId(conversation.id);
+
+        console.log(
+          "Created project:",
+          project.id,
+          "conversation:",
+          conversation.id
+        );
+      } catch (error) {
+        console.error("Failed to create project/conversation:", error);
+        // Continue with chat even if project creation fails
+      }
+    }
+
+    // All messages go through /chat/ API
+    handleChat(userMsg);
   };
 
-  // Function to handle normal conversation via /chat/ API
-  const handleNormalChat = (message: string) => {
+  // Function to handle chat via /chat/ API with SSE streaming
+  const handleChat = async (message: string) => {
     setIsLoading(true);
 
-    fetch("/chat/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ message }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
+    // DEBUG: Simulation Mode for verification
+    if (message.toLowerCase().includes("/simulate")) {
+      setTimeout(() => {
+        setIsLoading(false);
+        const mockData: AIResult = {
+          system_design:
+            "# System Architecture\n\nThis application uses a modular microservices architecture...",
+          architecture: "Client-Server with REST API",
+          tech_stack: ["React", "TypeScript", "Node.js", "Recoil"],
+          risks: "Data consistency in distributed systems.",
+          component_tree: {
+            folders: [
+              "src/components",
+              "src/hooks",
+              "src/services",
+              "src/utils",
+            ],
+          },
+        };
 
-        if (!res.ok) {
-          throw new Error(data.detail || `Server error: ${res.status}`);
+        updateFlowFromAI(mockData);
+        setDocData(mockData);
+        addMessage(
+          "Simulation complete! I've generated a mock architecture for you.",
+          "ai"
+        );
+      }, 1500);
+      return;
+    }
+
+    try {
+      // Accumulators for project build streaming
+      let systemDesignContent = "";
+      let componentTree: { folders: string[] } | null = null;
+      let chatMessageShown = false;
+
+      // Use streaming API - handles both regular JSON and SSE streams
+      const finalResponse = await chatService.streamMessage(
+        message,
+        (event) => {
+          // Handle different event types
+          switch (event.type) {
+            case "chat":
+              // Normal chat response - show in chat box
+              if (event.reply || event.message) {
+                const reply = (event.reply || event.message) as string;
+                addMessage(reply, "ai");
+                chatMessageShown = true;
+              }
+              break;
+
+            case "clarification":
+              // Clarification questions - show in chat box
+              if (event.questions && Array.isArray(event.questions)) {
+                const questionsText = event.questions.join("\n\n");
+                addMessage(questionsText, "ai");
+                chatMessageShown = true;
+              }
+              break;
+
+            case "handoff":
+              // Handoff message - show in chat box
+              if (event.message) {
+                addMessage(event.message as string, "ai");
+                chatMessageShown = true;
+              }
+              break;
+
+            case "context":
+              // Context info - can be logged or ignored
+              console.debug("Context:", event);
+              break;
+
+            case "input_spec":
+              // Input specification - logged for reference
+              console.debug("Input spec:", event.chunk);
+              break;
+
+            case "system_design":
+              // System design chunk - accumulate for doc view
+              if (event.chunk) {
+                systemDesignContent += event.chunk as string;
+              }
+              break;
+
+            case "component_tree":
+              // Component tree - store for graph view
+              if (event.chunk) {
+                componentTree = event.chunk as { folders: string[] };
+              }
+              break;
+
+            case "done":
+              // Stream complete - handled after loop
+              break;
+
+            default:
+              // Handle any response with reply/message fields (fallback)
+              if (event.reply || event.message || event.response) {
+                const text = (event.reply ||
+                  event.message ||
+                  event.response) as string;
+                if (text && !chatMessageShown) {
+                  addMessage(text, "ai");
+                  chatMessageShown = true;
+                }
+              }
+          }
+        }
+      );
+
+      setIsLoading(false);
+
+      // Handle plain JSON response that wasn't processed by streaming callback
+      // This happens when backend returns single JSON (not SSE) for normal chat
+      if (!chatMessageShown && finalResponse) {
+        if (finalResponse.type === "chat" || finalResponse.reply) {
+          const reply =
+            finalResponse.reply ||
+            finalResponse.response ||
+            finalResponse.message ||
+            finalResponse.text;
+          if (reply) {
+            addMessage(reply as string, "ai");
+            chatMessageShown = true;
+          }
+        } else if (
+          finalResponse.type === "clarification" &&
+          finalResponse.questions
+        ) {
+          const questionsText = (finalResponse.questions as string[]).join(
+            "\n\n"
+          );
+          addMessage(questionsText, "ai");
+          chatMessageShown = true;
+        }
+      }
+
+      // After streaming: update docs and graph if we received project data
+      if (systemDesignContent || componentTree) {
+        const docData: AIResult = {
+          system_design: systemDesignContent || "",
+          component_tree: componentTree || { folders: [] },
+          architecture: "Generated Architecture",
+          tech_stack: [],
+          risks: "",
+        };
+
+        // Update doc view with system design
+        setDocData(docData);
+
+        // Update React Flow graph with component tree
+        if (componentTree) {
+          updateFlowFromAI(docData);
         }
 
-        return data;
-      })
-      .then((response) => {
-        // Remove the "Thinking..." message and add the actual response
-        // The response structure depends on your API, adjust as needed
-        setIsLoading(false);
-        const aiResponse =
-          response.reply ||
-          response.response ||
-          response.message ||
-          response.text ||
-          "I received your message!";
-
-        addMessage(aiResponse, "ai");
-      })
-      .catch((error) => {
-        setIsLoading(false);
-        console.error("Chat API Error:", error);
-        addMessage(`Failed to get response: ${error.message}`, "ai");
-      });
+        // If no chat message was shown, add completion notification
+        if (!chatMessageShown) {
+          addMessage(
+            "System design generated! Check the Doc and Graph views.",
+            "ai"
+          );
+        }
+      } else if (!chatMessageShown) {
+        // Fallback if nothing was displayed
+        addMessage("I received your message!", "ai");
+      }
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Chat API Error:", error);
+      addMessage(
+        `Failed to get response: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        "ai"
+      );
+    }
   };
 
   // Enter key sends message
@@ -166,19 +347,22 @@ const DashboardContent: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-2 hide-scrollbar scroll-smooth">
+        <div
+          ref={chatRef}
+          className="flex-1 overflow-y-auto px-4 pb-2 hide-scrollbar scroll-smooth"
+        >
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center space-y-3 px-6">
                 <div className="w-16 h-16 mx-auto flex items-center justify-center">
-                  <CompactAnimatedSphere />
+                  <CompactAnimatedSphere isAnimating={false} />
                 </div>
                 <h3
                   className={`text-lg font-semibold ${
                     isDarkMode ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  Welcome to Kafei AI
+                  Welcome to AnToAnt
                 </h3>
                 <p
                   className={`text-sm max-w-xs ${
@@ -232,7 +416,7 @@ const DashboardContent: React.FC = () => {
                             </svg>
                           </div>
                         ) : (
-                          <CompactAnimatedSphere />
+                          <CompactAnimatedSphere isAnimating={false} />
                         )}
                       </div>
 
@@ -243,7 +427,7 @@ const DashboardContent: React.FC = () => {
                         }`}
                       >
                         <div
-                          className={`px-5 py-3.5 text-[14px] leading-relaxed shadow-sm ${
+                          className={`px-5 py-3.5 text-[14px] leading-relaxed shadow-sm whitespace-pre-wrap ${
                             isUser
                               ? isDarkMode
                                 ? "bg-white text-black rounded-2xl rounded-tr-none"
@@ -257,20 +441,20 @@ const DashboardContent: React.FC = () => {
                         </div>
                         {/* Timestamp or Label (Optional) */}
                         <span className="text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity px-1">
-                          {isUser ? "You" : "Kafei AI"}
+                          {isUser ? "You" : "AnToAnt AI"}
                         </span>
                       </div>
                     </div>
                   </div>
                 );
               })}
-              <div ref={chatRef} />
+
               {/* Animated Thinking Dots */}
               {isLoading && (
                 <div className="flex w-full justify-start animate-in slide-in-from-bottom-2 duration-500">
                   <div className="flex gap-3 max-w-[85%] flex-row">
                     <div className="flex-shrink-0 mt-1">
-                      <CompactAnimatedSphere />
+                      <CompactAnimatedSphere isAnimating={true} />
                     </div>
                     <div className="flex flex-col items-start">
                       <div
@@ -314,7 +498,7 @@ const DashboardContent: React.FC = () => {
           >
             {/* Animated Sphere */}
             <div className="ml-1">
-              <CompactAnimatedSphere />
+              <CompactAnimatedSphere isAnimating={true} />
             </div>
             <div className="flex-1">
               <textarea
@@ -324,7 +508,9 @@ const DashboardContent: React.FC = () => {
                 onKeyDown={handleKeyDown}
                 placeholder="Describe your architecture..."
                 rows={1}
-                className="w-full bg-transparent text-sm font-medium placeholder-gray-400 outline-none resize-none py-2.5 text-gray-800"
+                className={`w-full bg-transparent text-sm font-medium placeholder-gray-400 outline-none resize-none py-2.5 ${
+                  isDarkMode ? "text-white" : "text-gray-800"
+                }`}
                 style={{ minHeight: "40px", maxHeight: "120px" }}
               />
             </div>
@@ -364,8 +550,10 @@ const DashboardContent: React.FC = () => {
       <div className="w-full md:w-[70%] h-full hidden md:block p-1">
         <ReactFlowProvider>
           <div
-            className={`relative w-full h-full rounded-xl overflow-hidden shadow-inner border border-white/20 ${
-              isDarkMode ? "bg-black/20" : "bg-slate-50"
+            className={`relative w-full h-full rounded-xl overflow-hidden shadow-inner ${
+              isDarkMode
+                ? "bg-black/20 border border-white/20"
+                : "bg-white border border-gray-200"
             }`}
           >
             {/* Dynamic Island Navbar */}
@@ -517,26 +705,124 @@ const DashboardContent: React.FC = () => {
               </ReactFlow>
             ) : (
               <div
-                className={`w-full h-full flex items-center justify-center backdrop-blur-sm ${
-                  isDarkMode ? "bg-black/20" : "bg-gray-50/50"
+                className={`w-full h-full overflow-y-auto px-8 py-10 hide-scrollbar ${
+                  isDarkMode ? "bg-black/20" : "bg-white"
                 }`}
               >
-                <div className="text-center space-y-3">
-                  <div
-                    className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
-                      isDarkMode ? "bg-white/5" : "bg-gray-200"
-                    }`}
-                  >
-                    <span className="text-2xl text-gray-400">📄</span>
+                {docData ? (
+                  <div className="max-w-3xl mx-auto space-y-8 pb-20">
+                    <div className="space-y-2 border-b border-gray-200/10 pb-6">
+                      <h2
+                        className={`text-3xl font-bold tracking-tight ${
+                          isDarkMode ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        System Documentation
+                      </h2>
+                      <p
+                        className={`text-sm ${
+                          isDarkMode ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
+                        Generated architecture overview and specifications
+                      </p>
+                    </div>
+
+                    {/* Tech Stack Chips */}
+                    {docData.tech_stack && docData.tech_stack.length > 0 && (
+                      <div className="space-y-3">
+                        <h3
+                          className={`text-sm font-semibold uppercase tracking-wider ${
+                            isDarkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        >
+                          Technologies
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {docData.tech_stack.map((tech) => (
+                            <span
+                              key={tech}
+                              className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                                isDarkMode
+                                  ? "bg-white/5 border-white/10 text-gray-300"
+                                  : "bg-white border-gray-200 text-gray-700"
+                              }`}
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sections */}
+                    {[
+                      {
+                        title: "System Design",
+                        content: docData.system_design,
+                      },
+                      { title: "Architecture", content: docData.architecture },
+                      { title: "Deployment", content: docData.deployment },
+                      { title: "Risks & Mitigation", content: docData.risks },
+                    ].map(
+                      (section) =>
+                        section.content && (
+                          <div
+                            key={section.title}
+                            className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700"
+                          >
+                            <h3
+                              className={`text-lg font-semibold flex items-center gap-2 ${
+                                isDarkMode
+                                  ? "text-purple-400"
+                                  : "text-purple-600"
+                              }`}
+                            >
+                              {section.title}
+                            </h3>
+                            <div
+                              className={`p-5 rounded-xl border leading-relaxed text-sm whitespace-pre-wrap ${
+                                isDarkMode
+                                  ? "bg-[#111] border-white/5 text-gray-300"
+                                  : "bg-white border-gray-100 text-gray-700 shadow-sm"
+                              }`}
+                            >
+                              {section.content}
+                            </div>
+                          </div>
+                        )
+                    )}
                   </div>
-                  <p
-                    className={`font-medium ${
-                      isDarkMode ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  >
-                    Documentation View
-                  </p>
-                </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4">
+                    <div
+                      className={`w-20 h-20 rounded-2xl rotate-3 flex items-center justify-center shadow-2xl ${
+                        isDarkMode
+                          ? "bg-gradient-to-br from-gray-800 to-black border border-white/5"
+                          : "bg-gray-100 shadow-gray-200"
+                      }`}
+                    >
+                      <span className="text-4xl">📄</span>
+                    </div>
+                    <div>
+                      <h3
+                        className={`text-lg font-semibold mb-2 ${
+                          isDarkMode ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        No Documentation Yet
+                      </h3>
+                      <p
+                        className={`text-sm max-w-xs mx-auto ${
+                          isDarkMode ? "text-gray-500" : "text-gray-400"
+                        }`}
+                      >
+                        Start a chat to generate system architecture, component
+                        trees, and technical documentation.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -547,7 +833,7 @@ const DashboardContent: React.FC = () => {
 };
 
 // Wrapper component that provides the layout with DarkModeProvider
-const KafeiDashboard: React.FC = () => {
+const AnToAntDashboard: React.FC = () => {
   return (
     <DashboardLayout>
       <DashboardContent />
@@ -555,4 +841,4 @@ const KafeiDashboard: React.FC = () => {
   );
 };
 
-export default KafeiDashboard;
+export default AnToAntDashboard;

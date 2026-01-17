@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   User,
@@ -15,9 +15,11 @@ import {
   Globe,
   Check,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDarkMode } from "./useDarkMode";
+import { authService } from "@/services/auth";
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -25,6 +27,17 @@ interface ProfileModalProps {
   activeTab: "profile" | "settings" | "upgrade";
   onTabChange: (tab: "profile" | "settings" | "upgrade") => void;
   onSignOut: () => void;
+}
+
+interface UserData {
+  id?: string;
+  name?: string;
+  email?: string;
+  created_at?: string;
+  plan?: string;
+  verified?: boolean;
+  verifiedDate?: string;
+  [key: string]: unknown;
 }
 
 const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -36,21 +49,69 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 }) => {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
 
-  // Demo user data
-  const user = {
-    name: "land debbarma",
-    email: "admin@kafei.ai",
-    joinDate: "January 2026",
-    plan: "Free Plan",
-    verified: true,
-    verifiedDate: "2 Jan, 2026",
-  };
+  // User data from API
+  const [user, setUser] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
 
   // Form state for profile editing
-  const [firstName, setFirstName] = useState(user.name.split(" ")[0] || "");
-  const [lastName, setLastName] = useState(
-    user.name.split(" ").slice(1).join(" ") || ""
-  );
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
+  // Fetch user data when modal opens
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!isOpen) return;
+
+      try {
+        setLoading(true);
+        setError("");
+
+        // Get token from localStorage or cookies
+        const token =
+          localStorage.getItem("auth_token") ||
+          document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("auth_token="))
+            ?.split("=")[1];
+
+        if (!token) {
+          setError("Not authenticated");
+          return;
+        }
+
+        const userData = await authService.getCurrentUser(token);
+        setUser(userData);
+
+        // Update form fields
+        const fullName = userData.name || "";
+        const nameParts = fullName.split(" ");
+        setFirstName(nameParts[0] || "");
+        setLastName(nameParts.slice(1).join(" ") || "");
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+        setError("Failed to load user data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [isOpen]);
+
+  // Format join date
+  const formatJoinDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return "N/A";
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -104,75 +165,93 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 
               {/* Profile Info Section */}
               <div className="px-6 pb-4 -mt-10 relative z-10">
-                <div className="flex items-end justify-between">
-                  {/* Avatar with badge */}
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border-4 border-[#0d0d0d] flex items-center justify-center overflow-hidden">
-                      <User size={36} className="text-gray-400" />
-                    </div>
-                    {user.verified && (
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-[#0d0d0d]">
-                        <Check
-                          size={12}
-                          className="text-white"
-                          strokeWidth={3}
-                        />
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                ) : error ? (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-200 rounded-lg py-3 px-4 text-sm">
+                    {error}
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-end justify-between">
+                      {/* Avatar with badge */}
+                      <div className="relative">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border-4 border-[#0d0d0d] flex items-center justify-center overflow-hidden">
+                          <User size={36} className="text-gray-400" />
+                        </div>
+                        {user?.verified && (
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-[#0d0d0d]">
+                            <Check
+                              size={12}
+                              className="text-white"
+                              strokeWidth={3}
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Action buttons */}
-                  <div className="flex gap-2 mb-2">
-                    <button
-                      onClick={() => onTabChange("settings")}
-                      className="px-4 py-1.5 bg-transparent border border-white/20 text-white text-xs font-medium rounded-lg hover:bg-white/5 transition-all flex items-center gap-2"
-                    >
-                      <Settings size={14} />
-                      Settings
-                    </button>
-                    <button
-                      onClick={() => onTabChange("upgrade")}
-                      className="px-4 py-1.5 bg-transparent border border-white/20 text-white text-xs font-medium rounded-lg hover:bg-white/5 transition-all flex items-center gap-2"
-                    >
-                      <Crown size={14} />
-                      Upgrade
-                    </button>
-                  </div>
-                </div>
+                      {/* Action buttons */}
+                      <div className="flex gap-2 mb-2">
+                        <button
+                          onClick={() => onTabChange("settings")}
+                          className="px-4 py-1.5 bg-transparent border border-white/20 text-white text-xs font-medium rounded-lg hover:bg-white/5 transition-all flex items-center gap-2"
+                        >
+                          <Settings size={14} />
+                          Settings
+                        </button>
+                        <button
+                          onClick={() => onTabChange("upgrade")}
+                          className="px-4 py-1.5 bg-transparent border border-white/20 text-white text-xs font-medium rounded-lg hover:bg-white/5 transition-all flex items-center gap-2"
+                        >
+                          <Crown size={14} />
+                          Upgrade
+                        </button>
+                      </div>
+                    </div>
 
-                {/* Name and status */}
-                <div className="mt-3 flex items-center gap-3">
-                  <h2 className="text-white font-semibold text-xl capitalize">
-                    {user.name}
-                  </h2>
-                  <span className="px-2.5 py-0.5 bg-green-500/20 text-green-400 text-xs font-medium rounded-full flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-                    {user.plan}
-                  </span>
-                </div>
-                <p className="text-gray-400 text-sm mt-0.5">{user.email}</p>
-
-                {/* Stats row */}
-                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-white/10">
-                  <div>
-                    <p className="text-gray-500 text-xs">Member since</p>
-                    <p className="text-white font-medium text-sm">
-                      {user.joinDate}
+                    {/* Name and status */}
+                    <div className="mt-3 flex items-center gap-3">
+                      <h2 className="text-white font-semibold text-xl capitalize">
+                        {user?.name || "User"}
+                      </h2>
+                      <span className="px-2.5 py-0.5 bg-green-500/20 text-green-400 text-xs font-medium rounded-full flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                        {user?.plan || "Free Plan"}
+                      </span>
+                    </div>
+                    <p className="text-gray-400 text-sm mt-0.5">
+                      {user?.email}
                     </p>
-                  </div>
-                  <div className="w-px h-8 bg-white/10" />
-                  <div>
-                    <p className="text-gray-500 text-xs">Current plan</p>
-                    <p className="text-white font-medium text-sm">
-                      {user.plan}
-                    </p>
-                  </div>
-                  <div className="w-px h-8 bg-white/10" />
-                  <div>
-                    <p className="text-gray-500 text-xs">Projects</p>
-                    <p className="text-white font-medium text-sm">3 / 5</p>
-                  </div>
-                </div>
+
+                    {/* Stats row */}
+                    <div className="flex items-center gap-6 mt-4 pt-4 border-t border-white/10">
+                      <div>
+                        <p className="text-gray-500 text-xs">Member since</p>
+                        <p className="text-white font-medium text-sm">
+                          {formatJoinDate(user?.created_at)}
+                        </p>
+                      </div>
+                      <div className="w-px h-8 bg-white/10" />
+                      <div>
+                        <p className="text-gray-500 text-xs">Current plan</p>
+                        <p className="text-white font-medium text-sm">
+                          {user?.plan || "Free Plan"}
+                        </p>
+                      </div>
+                      <div className="w-px h-8 bg-white/10" />
+                      <div>
+                        <p className="text-gray-500 text-xs">User ID</p>
+                        <p className="text-white font-medium text-sm">
+                          {user?.id
+                            ? `#${String(user.id).substring(0, 8)}`
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Content Area */}
@@ -216,12 +295,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                         </div>
                         <input
                           type="email"
-                          value={user.email}
+                          value={user?.email || ""}
                           readOnly
                           className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none cursor-not-allowed opacity-70"
                         />
                       </div>
-                      {user.verified && (
+                      {user?.verified && (
                         <div className="flex items-center gap-2 mt-2">
                           <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                             <Check
@@ -231,7 +310,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                             />
                           </div>
                           <span className="text-blue-400 text-xs font-medium uppercase tracking-wide">
-                            Verified {user.verifiedDate}
+                            Verified {user?.verifiedDate || ""}
                           </span>
                         </div>
                       )}
@@ -246,7 +325,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                         <div className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-lg flex items-center gap-3">
                           <Shield size={16} className="text-gray-400" />
                           <span className="text-white text-sm">
-                            {user.plan}
+                            {user?.plan || "Free Plan"}
                           </span>
                         </div>
                         <button
@@ -266,7 +345,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                       <div className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg flex items-center gap-3">
                         <Calendar size={16} className="text-gray-400" />
                         <span className="text-white text-sm">
-                          {user.joinDate}
+                          {formatJoinDate(user?.created_at)}
                         </span>
                       </div>
                     </div>

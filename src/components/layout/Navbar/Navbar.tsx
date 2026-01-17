@@ -13,7 +13,7 @@ const Navbar = () => {
         {/* LEFT: Desktop Menu */}
         <div className="hidden md:flex bg-white/10 backdrop-blur-2xl text-white rounded-full px-20 py-5 items-center gap-10">
           <a href="/" className="text-2xl font-bold flex items-center gap-1">
-            KAFEI <sup className="text-xs">®</sup>
+            AnToAnt <sup className="text-xs">®</sup>
           </a>
 
           <a
@@ -46,7 +46,7 @@ const Navbar = () => {
             href="/"
             className="text-2xl font-bold text-white flex items-center gap-1 md:hidden"
           >
-            KAFEI <sup className="text-xs">™</sup>
+            AnToAnt <sup className="text-xs">™</sup>
           </a>
 
           {/* Desktop Buttons */}

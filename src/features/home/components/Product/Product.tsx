@@ -50,7 +50,7 @@ export const Product = () => {
       content: (
         <div>
           <p className="text-white dark:text-neutral-200 text-xs md:text-sm font-normal mb-8">
-            Support for more frontend, backend, and database stacks as Kafei
+            Support for more frontend, backend, and database stacks as AnToAnt
             grows. The goal is simple: adapt to how you build, not the other way
             around.
           </p>

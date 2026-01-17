@@ -51,9 +51,9 @@ const Hero = () => {
             transition={{ duration: 0.6 }}
             className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm"
           >
-            <span className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-sm font-medium text-white/80">
-              New Release Available
+              Beta v1.0.0 Release
             </span>
           </motion.div>
 

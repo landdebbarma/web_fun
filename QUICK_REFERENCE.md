@@ -3,7 +3,7 @@
 ## 📂 Directory Tree
 
 ```
-Kafei_landingPage/
+AnToAnt_landingPage/
 │
 ├── 📄 Configuration Files
 │   ├── package.json
@@ -83,9 +83,9 @@ Kafei_landingPage/
     │   │       │   └── index.ts
     │   │       └── index.ts
     │   │
-    │   ├── kafei-ai/
+    │   ├── AnToAnt-ai/
     │   │   └── components/
-    │   │       └── KafeiAi/
+    │   │       └── AnToAntAi/
     │   │
     │   └── wishlist/
     │       └── components/

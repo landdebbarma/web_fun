@@ -10,12 +10,12 @@ interface SEOProps {
   noindex?: boolean;
 }
 
-const DEFAULT_TITLE = "Kafei - AI-Powered Platform for Enthusiasts";
+const DEFAULT_TITLE = "AnToAnt - AI-Powered Platform for Enthusiasts";
 const DEFAULT_DESCRIPTION =
-  "Transform your business with Kafei. AI-driven inventory management, smart ordering, and seamless commerce solutions for enthusiasts and businesses.";
+  "Transform your business with AnToAnt. AI-driven inventory management, smart ordering, and seamless commerce solutions for enthusiasts and businesses.";
 const DEFAULT_KEYWORDS =
-  "kafei, AI, platform, smart ordering, inventory management, business, commerce";
-const SITE_URL = "https://kafei.com";
+  "AnToAnt, AI, platform, smart ordering, inventory management, business, commerce";
+const SITE_URL = "https://AnToAnt.com";
 const DEFAULT_OG_IMAGE = "/coffe.png";
 
 export const SEO = ({
@@ -27,7 +27,7 @@ export const SEO = ({
   ogType = "website",
   noindex = false,
 }: SEOProps) => {
-  const fullTitle = title ? `${title} | Kafei` : DEFAULT_TITLE;
+  const fullTitle = title ? `${title} | AnToAnt` : DEFAULT_TITLE;
   const canonicalUrl = canonical ? `${SITE_URL}${canonical}` : SITE_URL;
 
   return (
@@ -46,7 +46,7 @@ export const SEO = ({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={`${SITE_URL}${ogImage}`} />
-      <meta property="og:site_name" content="Kafei" />
+      <meta property="og:site_name" content="AnToAnt" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />

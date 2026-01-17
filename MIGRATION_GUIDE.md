@@ -37,9 +37,9 @@
 - `src/components/PricingDemo .tsx` → `src/features/pricing/components/PricingDemo/PricingDemo.tsx`
 - `src/components/ui/PricingContainer.tsx` → `src/features/pricing/components/PricingContainer/PricingContainer.tsx`
 
-#### Kafei AI Feature
+#### AnToAnt AI Feature
 
-- `src/components/KafeiAi/` → `src/features/kafei-ai/components/KafeiAi/`
+- `src/components/AnToAntAi/` → `src/features/AnToAnt-ai/components/AnToAntAi/`
 
 #### Wishlist Feature
 

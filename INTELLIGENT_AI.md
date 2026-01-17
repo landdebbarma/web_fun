@@ -12,7 +12,7 @@ The AI is now **SMART** and can handle different types of conversations:
 
 ```
 You: "hi"
-AI: "Hello! 👋 I'm Kafei AI, your architecture assistant. I can:
+AI: "Hello! 👋 I'm AnToAnt AI, your architecture assistant. I can:
      🏗️ Generate system architectures for your projects
      💬 Answer general questions
      🎯 Help you plan and build software"

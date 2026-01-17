@@ -25,18 +25,18 @@ import { AuthProvider } from "@/app/providers";
 **Before:**
 
 ```typescript
-import Overview from "./components/KafeiAi/overview";
+import Overview from "./components/AnToAntAi/overview";
 import Wishlist from "./components/page/Wishlist";
-import Dashboard from "./components/KafeiAi/dashboard/main";
+import Dashboard from "./components/AnToAntAi/dashboard/main";
 import PrivateRoute from "./components/PrivateRoute";
 ```
 
 **After:**
 
 ```typescript
-import Overview from "@/features/kafei-ai/components/KafeiAi/overview";
+import Overview from "@/features/AnToAnt-ai/components/AnToAntAi/overview";
 import { Wishlist } from "@/features/wishlist/components";
-import Dashboard from "@/features/kafei-ai/components/KafeiAi/dashboard/main";
+import Dashboard from "@/features/AnToAnt-ai/components/AnToAntAi/dashboard/main";
 import { PrivateRoute } from "@/components/common";
 ```
 

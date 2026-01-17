@@ -31,11 +31,10 @@ export function FloatingPaths({ position }: { position: number }) {
             stroke="currentColor"
             strokeWidth={path.width}
             strokeOpacity={0.1 + path.id * 0.03}
-            initial={{ pathLength: 0.3, opacity: 0.6 }}
+            initial={{ pathLength: 0.3, opacity: 0.3 }}
             animate={{
-              pathLength: 1,
+              pathLength: [0.3, 1, 0.3],
               opacity: [0.3, 0.6, 0.3],
-              pathOffset: [0, 1, 0],
             }}
             transition={{
               duration: 20 + Math.random() * 10,

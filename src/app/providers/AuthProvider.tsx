@@ -1,55 +1,43 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { authService } from "@/services/auth";
+import type { User } from "@/services/auth";
+import { AuthContext } from "./AuthContext";
+import Cookies from "js-cookie";
 
-type User = any | null;
+type AuthUser = User | null;
 
-type AuthContextType = {
-  user: User;
-  token: string | null;
-  loading: boolean;
-  login: (token: string | null, user?: any) => void;
-  logout: () => void;
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User>(null);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [user, setUser] = useState<AuthUser>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Helper: fetch /users/me to validate token
   const validateToken = async (tkn: string) => {
     try {
-      const res = await fetch("/users/me", {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${tkn}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("Not authenticated");
-      }
-
-      const data = await res.json();
+      const data = await authService.getCurrentUser(tkn);
       setUser(data);
       setToken(tkn);
-      localStorage.setItem("auth_token", tkn);
+      Cookies.set("auth_token", tkn, {
+        expires: 7,
+        secure: window.location.protocol === "https:",
+        sameSite: "strict",
+      });
       localStorage.setItem("user_data", JSON.stringify(data));
       return true;
-    } catch (err) {
+    } catch {
       setUser(null);
       setToken(null);
-      localStorage.removeItem("auth_token");
+      Cookies.remove("auth_token");
       localStorage.removeItem("user_data");
       return false;
     }
   };
 
   useEffect(() => {
-    // On mount, check for token in localStorage and validate
-    const t = localStorage.getItem("auth_token");
+    // On mount, check for token in cookies and validate
+    const t = Cookies.get("auth_token");
     if (!t) {
       setLoading(false);
       return;
@@ -61,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })();
   }, []);
 
-  const login = (tkn: string | null, u?: any) => {
+  const login = (tkn: string | null, u?: User) => {
     if (u) {
       setUser(u);
       localStorage.setItem("user_data", JSON.stringify(u));
@@ -70,16 +58,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(tkn);
 
     if (tkn) {
-      localStorage.setItem("auth_token", tkn);
+      Cookies.set("auth_token", tkn, {
+        expires: 7,
+        secure: window.location.protocol === "https:",
+        sameSite: "strict",
+      });
     } else {
-      localStorage.removeItem("auth_token");
+      Cookies.remove("auth_token");
     }
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("auth_token");
+    Cookies.remove("auth_token");
     localStorage.removeItem("user_data");
   };
 
@@ -88,12 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
 };
 
 export default AuthProvider;

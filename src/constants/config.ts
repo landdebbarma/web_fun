@@ -1,7 +1,7 @@
 // Application configuration constants
 export const APP_CONFIG = {
-  name: 'Kafei',
-  description: 'Kafei Landing Page',
+  name: 'AnToAnt',
+  description: 'AnToAnt Landing Page',
   version: '1.0.0',
 } as const;
 

@@ -24,21 +24,21 @@ const HomePage = () => {
         return {
           title: "Product",
           description:
-            "Discover Kafei's AI-powered platform. Smart inventory, seamless ordering, and powerful analytics for your business.",
+            "Discover AnToAnt's AI-powered platform. Smart inventory, seamless ordering, and powerful analytics for your business.",
           canonical: "/product",
         };
       case "/features":
         return {
           title: "Features",
           description:
-            "Explore Kafei's powerful features: AI-driven inventory management, smart ordering systems, and real-time analytics for businesses.",
+            "Explore AnToAnt's powerful features: AI-driven inventory management, smart ordering systems, and real-time analytics for businesses.",
           canonical: "/features",
         };
       case "/pricing":
         return {
           title: "Pricing",
           description:
-            "Affordable pricing plans for Kafei. Choose the perfect plan for your business - from startups to enterprise.",
+            "Affordable pricing plans for AnToAnt. Choose the perfect plan for your business - from startups to enterprise.",
           canonical: "/pricing",
         };
       default:
@@ -94,10 +94,10 @@ const HomePage = () => {
 
         <main className="pt-20">
           <Hero />
-          <WhyKafei />
           <section id="features">
             <Bento />
           </section>
+          <WhyKafei />
           <section id="product">
             <Product />
           </section>

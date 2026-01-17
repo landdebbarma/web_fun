@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kafei.com/sitemap.xml
+Sitemap: https://AnToAnt.com/sitemap.xml

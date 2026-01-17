@@ -5,10 +5,11 @@ export const ROUTES = {
   FEATURES: '/features',
   PRICING: '/pricing',
   ABOUT: '/about',
-  KAFEI_AI: '/KafeiAi',
+  AnToAnt_AI: '/AnToAntAi',
   LOGIN: '/login',
   SIGNUP: '/signup',
-  DASHBOARD: '/dashboard',
+  DASHBOARD: '/AnToAnt',
+  COMING_SOON: '/coming-soon',
   NOT_FOUND: '*',
 } as const;
 

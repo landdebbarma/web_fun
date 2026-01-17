@@ -5,10 +5,10 @@ const testimonials = [
   {
     id: 1,
     quote:
-      "KAFEI's AI technology has transformed how we handle complex workflows.",
+      "AnToAnt's AI technology has transformed how we handle complex workflows.",
     author: "Monir",
     role: "Co-Founder & CEO",
-    company: "Kafei",
+    company: "AnToAnt",
     image: "",
   },
   {
@@ -17,7 +17,7 @@ const testimonials = [
       "The platform's intuitive design and powerful capabilities have exceeded our expectations.",
     author: "Land",
     role: "Co-Founder & CTO",
-    company: "Kafei",
+    company: "AnToAnt",
     image: "",
   },
 ];
