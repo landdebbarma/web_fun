@@ -5,6 +5,7 @@ import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
+import img1 from "@/assets/images/img1.png";
 
 const MdOutlineFormatQuote = ({ className }: { className?: string }) => (
   <svg
@@ -34,12 +35,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           variant === "outline" &&
             "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
           size === "icon" && "h-9 w-9",
-          className,
+          className
         )}
         {...props}
       />
     );
-  },
+  }
 );
 Button.displayName = "Button";
 
@@ -56,9 +57,7 @@ const Section = ({ title, subtitle, children }: SectionProps) => {
         <h2 className="text-3xl font-bold tracking-tight text-white/90 sm:text-4xl">
           {title}
         </h2>
-        {subtitle && (
-          <p className="mt-4 text-lg text-gray-600">{subtitle}</p>
-        )}
+        {subtitle && <p className="mt-4 text-lg text-gray-600">{subtitle}</p>}
         <div className="mt-12">{children}</div>
       </div>
     </section>
@@ -86,8 +85,7 @@ type CarouselContextProps = {
   canScrollNext: boolean;
 } & CarouselProps;
 
-const CarouselContext =
-  React.createContext<CarouselContextProps | null>(null);
+const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
 function useCarousel() {
   const context = React.useContext(CarouselContext);
@@ -111,14 +109,14 @@ const Carousel = forwardRef<
       children,
       ...props
     },
-    ref,
+    ref
   ) => {
     const [carouselRef, api] = useEmblaCarousel(
       {
         ...opts,
         axis: orientation === "horizontal" ? "x" : "y",
       },
-      plugins,
+      plugins
     );
     const [canScrollPrev, setCanScrollPrev] = React.useState(false);
     const [canScrollNext, setCanScrollNext] = React.useState(false);
@@ -154,8 +152,7 @@ const Carousel = forwardRef<
           api,
           opts,
           orientation:
-            orientation ||
-            (opts?.axis === "y" ? "vertical" : "horizontal"),
+            orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
           scrollPrev,
           scrollNext,
           canScrollPrev,
@@ -173,7 +170,7 @@ const Carousel = forwardRef<
         </div>
       </CarouselContext.Provider>
     );
-  },
+  }
 );
 Carousel.displayName = "Carousel";
 
@@ -188,10 +185,8 @@ const CarouselContent = forwardRef<
         ref={ref}
         className={clsx(
           "flex",
-          orientation === "horizontal"
-            ? "-ml-4"
-            : "-mt-4 flex-col",
-          className,
+          orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+          className
         )}
         {...props}
       />
@@ -213,7 +208,7 @@ const CarouselItem = forwardRef<
       className={clsx(
         "min-w-0 shrink-0 grow-0 basis-full",
         orientation === "horizontal" ? "pl-4" : "pt-4",
-        className,
+        className
       )}
       {...props}
     />
@@ -228,7 +223,7 @@ CarouselItem.displayName = "CarouselItem";
 const companies = [
   {
     name: "Google",
-    url: "https://res.cloudinary.com/eldoraui/img/upload/v1734066341/Google_fav2wl.svg",
+    url: img1,
   },
   {
     name: "GitHub",
@@ -271,26 +266,26 @@ function getTestimonialQuote(index: number): string {
 
 function getTestimonialName(index: number): string {
   const names = [
-    "Alex Rivera",
-    "Samantha Lee",
-    "Raj Patel",
-    "Emily Chen",
-    "Michael Brown",
-    "Linda Wu",
-    "Carlos Gomez",
+    "Nishan Barua",
+    "Shafru Mog",
+    "Samridha Barua",
+    "Bishal Paul",
+    "jebin Barma",
+    "Rima Barma",
+    "karnilian debbarma",
   ];
   return names[index % names.length];
 }
 
 function getTestimonialRole(index: number): string {
   const roles = [
-    "Head of Cybersecurity",
-    "Chief Information Security Officer",
-    "VP of Engineering",
-    "Security Operations Manager",
-    "Director of IT Security",
-    "Lead Security Architect",
-    "Chief Technology Officer",
+    "Freelancer Developer",
+    "Collage Student",
+    "Frontend Developer",
+    "Backend Developer",
+    "Full Stack Developer",
+    "Backend Developer",
+    "Collage Student",
   ];
   return roles[index % roles.length];
 }
@@ -301,9 +296,7 @@ function getTestimonialRole(index: number): string {
 
 export function Component() {
   return (
-    <Section
-      title="What Our Clients Say"
-    >
+    <Section title="What Our Users Say">
       <Carousel
         opts={{ loop: true }}
         plugins={[

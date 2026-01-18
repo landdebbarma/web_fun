@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { AnomalousMatterHero } from "@/components/ui/anomalous";
 import { Marquee } from "@/components/ui/marquee";
 import { ArrowRight, Play } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ROUTES } from "@/constants/routes";
 
 const heroTitles = ["Design", "Build", "Deliver", "With confidence"];
 
@@ -53,7 +55,7 @@ const Hero = () => {
           >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-sm font-medium text-white/80">
-              Beta v1.0.0 Release
+              Pre Beta v1.0.0 Release
             </span>
           </motion.div>
 
@@ -80,10 +82,13 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mb-12"
           >
-            <button className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-all duration-300 hover:gap-3">
+            <Link
+              to={ROUTES.SIGNUP}
+              className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-all duration-300 hover:gap-3"
+            >
               Get Started
               <ArrowRight size={20} />
-            </button>
+            </Link>
             <button className="flex items-center justify-center gap-2 px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-lg hover:border-white/60 hover:bg-white/5 transition-all duration-300">
               <Play size={20} />
               Watch Demo

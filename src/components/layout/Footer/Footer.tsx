@@ -68,7 +68,7 @@ const Footer: React.FC = () => {
                 >
                   <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                   <span className="text-sm font-medium text-white/80">
-                    beta v1.0.0 Release
+                    pre beta v1.0.0 Release
                   </span>
                 </motion.div>
               </div>

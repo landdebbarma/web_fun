@@ -291,10 +291,10 @@ export default function FAQWithSpiral() {
         {/* Header */}
         <header className="mb-10 flex items-end justify-between border-b border-white/20 pb-6">
           <div>
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight">
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight">
               FAQ
             </h1>
-            <p className="mt-2 text-sm md:text-base text-white/70">
+            <p className="mt-2 text-xs md:text-sm text-white/70">
               Frequently Asked Questions at AnToAnt.com
             </p>
           </div>
@@ -440,7 +440,7 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
           <span className="text-xs text-white/40">
             {String(index).padStart(2, "0")}
           </span>
-          <h3 className="text-base md:text-lg font-semibold leading-tight">
+          <h3 className="text-sm md:text-base font-semibold leading-tight">
             {q}
           </h3>
         </div>
@@ -454,7 +454,7 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
         }`}
       >
         <div className="min-h-0 overflow-hidden">
-          <p className="text-sm text-white/70">{a}</p>
+          <p className="text-xs md:text-sm text-white/70">{a}</p>
         </div>
       </div>
       {/* Hover halo */}
