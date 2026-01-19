@@ -340,6 +340,23 @@ const LoginPage = () => {
                 </button>
               </div>
             </div>
+            <div className="flex justify-between items-center mt-2">
+              <label className="flex items-center gap-2 cursor-pointer group select-none">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black/20 cursor-pointer accent-black"
+                />
+                <span className="text-sm text-gray-400 group-hover:text-black transition-colors">
+                  Remember me
+                </span>
+              </label>
+              <Link
+                to={ROUTES.FORGOT_PASSWORD}
+                className="text-sm text-gray-400 hover:text-black transition-colors"
+              >
+                Forgot Password?
+              </Link>
+            </div>
 
             <button
               type="submit"

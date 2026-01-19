@@ -27,7 +27,7 @@ const footerLinks = {
 
 const Footer: React.FC = () => {
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden font-sans">
+    <div className="relative w-full py-20 flex items-center justify-center p-4 overflow-hidden font-sans">
       <style>{`
         @keyframes float {
           0%, 100% { transform: translate(-50%, 0px); }

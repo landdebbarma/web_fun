@@ -18,6 +18,64 @@
     animation: moveUp 3s linear infinite;
     animation-delay: 2.25s;
   }
+
+  /* Logo Glitch Effect */
+  .logo-glitch {
+    position: relative;
+    animation: glitch-trigger 5s infinite;
+  }
+
+  /* 
+     We define the 5s loop here. 
+     0% -> 90% : No change (idle time).
+     90% -> 100% : Rapid chaotic changes (the 'burst').
+  */
+  @keyframes glitch-trigger {
+    0%, 90% {
+      transform: translate(0);
+      filter: none;
+    }
+    91% {
+      transform: translate(-3px, 2px);
+      filter: hue-rotate(90deg) saturate(3);
+    }
+    92% {
+      transform: translate(3px, -2px);
+      filter: hue-rotate(180deg) saturate(2);
+    }
+    93% {
+      transform: translate(-2px, -3px);
+      filter: hue-rotate(270deg) saturate(4);
+    }
+    94% {
+      transform: translate(2px, 3px);
+      filter: hue-rotate(45deg) saturate(2);
+    }
+    95% {
+      transform: translate(-3px, -1px);
+      filter: hue-rotate(135deg) saturate(3);
+    }
+    96% {
+      transform: translate(3px, 1px);
+      filter: hue-rotate(225deg) saturate(2);
+    }
+    97% {
+      transform: translate(-1px, -2px);
+      filter: hue-rotate(315deg) saturate(4);
+    }
+    98% {
+      transform: translate(1px, 2px);
+      filter: hue-rotate(60deg) saturate(2);
+    }
+    99% {
+      transform: translate(-2px, 1px);
+      filter: hue-rotate(120deg) saturate(3);
+    }
+    100% {
+      transform: translate(0);
+      filter: none;
+    }
+  }
 }
 
 @keyframes moveRight {

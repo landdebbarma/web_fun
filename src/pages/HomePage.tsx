@@ -11,6 +11,7 @@ import {
 import { PricingContainer } from "@/features/pricing/components";
 import { Component as Testimonial } from "@/components/ui/testimonial";
 import FAQWithSpiral from "@/components/ui/faq";
+import { FeedbackWidget } from "@/components/ui/FeedbackWidget";
 import { useLocation } from "react-router-dom";
 
 const HomePage = () => {
@@ -109,6 +110,8 @@ const HomePage = () => {
           <CTA />
           <Footer />
         </main>
+
+        <FeedbackWidget />
       </div>
     </>
   );

@@ -4,21 +4,11 @@ import { clsx } from "clsx";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react";
-import Autoplay from "embla-carousel-autoplay";
-import img1 from "@/assets/images/img1.png";
 
-const MdOutlineFormatQuote = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-  >
-    <path d="M9.99 12.15l-1.42 1.42L7.15 12 0 19.15 7.15 24 14.3 16.85 14.3 0H0v12.15h9.99zM24 0v12.15l-1.42-1.42-1.42 1.42L16.85 12 9.7 19.15 16.85 24 24 16.85V0h-9.7v12.15L24 0z" />
-  </svg>
-);
+import Autoplay from "embla-carousel-autoplay";
+import { Heart } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import img1 from "@/assets/images/img1.png";
 
 interface ButtonProps extends React.ComponentPropsWithoutRef<"button"> {
   variant?: "outline" | "default";
@@ -35,12 +25,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           variant === "outline" &&
             "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
           size === "icon" && "h-9 w-9",
-          className
+          className,
         )}
         {...props}
       />
     );
-  }
+  },
 );
 Button.displayName = "Button";
 
@@ -103,20 +93,20 @@ const Carousel = forwardRef<
     {
       orientation = "horizontal",
       opts,
-      setApi,
+      // setApi,
       plugins,
       className,
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const [carouselRef, api] = useEmblaCarousel(
       {
         ...opts,
         axis: orientation === "horizontal" ? "x" : "y",
       },
-      plugins
+      plugins,
     );
     const [canScrollPrev, setCanScrollPrev] = React.useState(false);
     const [canScrollNext, setCanScrollNext] = React.useState(false);
@@ -170,7 +160,7 @@ const Carousel = forwardRef<
         </div>
       </CarouselContext.Provider>
     );
-  }
+  },
 );
 Carousel.displayName = "Carousel";
 
@@ -186,7 +176,7 @@ const CarouselContent = forwardRef<
         className={clsx(
           "flex",
           orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
-          className
+          className,
         )}
         {...props}
       />
@@ -208,7 +198,7 @@ const CarouselItem = forwardRef<
       className={clsx(
         "min-w-0 shrink-0 grow-0 basis-full",
         orientation === "horizontal" ? "pl-4" : "pt-4",
-        className
+        className,
       )}
       {...props}
     />
@@ -295,58 +285,125 @@ function getTestimonialRole(index: number): string {
 //
 
 export function Component() {
+  const [likedItems, setLikedItems] = React.useState<Set<number>>(new Set());
+  const [showNotification, setShowNotification] = React.useState(false);
+
+  const handleLike = (index: number) => {
+    setLikedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 2000);
+      }
+      return next;
+    });
+  };
+
   return (
     <Section title="What Our Users Say">
       <Carousel
-        opts={{ loop: true }}
+        opts={{ loop: true, align: "start" }}
         plugins={[
           Autoplay({
-            delay: 1000,
+            delay: 3000,
             stopOnInteraction: false,
             stopOnMouseEnter: true,
           }),
         ]}
       >
-        <div className="relative mx-auto max-w-2xl">
-          <CarouselContent>
-            {Array.from({ length: 7 }).map((_, index) => (
-              <CarouselItem key={index}>
-                <div className="p-2 pb-5">
-                  <div className="text-center">
-                    <MdOutlineFormatQuote className="text-themeDarkGray mx-auto my-4 text-4xl" />
+        <div className="relative mx-auto w-full px-4">
+          <CarouselContent className="-ml-4">
+            {Array.from({ length: 7 }).map((_, index) => {
+              const isLiked = likedItems.has(index);
+              return (
+                <CarouselItem
+                  key={index}
+                  className="pl-4 md:basis-1/2 lg:basis-1/3"
+                >
+                  <div className="h-full">
+                    {/* Notification Card */}
+                    <div className="h-full relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl transition-all duration-300 hover:bg-white/10 group select-none">
+                      {/* Apps Store / iOS Notification Header */}
+                      <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-[5px] overflow-hidden bg-black/20 p-0.5">
+                            <img
+                              src={companies[index % companies.length].url}
+                              alt="App Icon"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <span className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">
+                            {companies[index % companies.length].name}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-white/40 font-medium">
+                          now
+                        </span>
+                      </div>
 
-                    <h4 className="text-1xl mx-auto max-w-lg px-10 font-semibold">
-                      {getTestimonialQuote(index)}
-                    </h4>
+                      {/* Content */}
+                      <div className="p-4 flex flex-col gap-2 relative">
+                        <div className="flex justify-between items-start">
+                          <h4 className="text-sm font-bold text-white leading-none">
+                            {getTestimonialName(index)}
+                          </h4>
 
-                    <div className="mt-8">
-                      <img
-                        width={0}
-                        height={40}
-                        src={companies[index % companies.length].url}
-                        alt={`${companies[index % companies.length].name} Logo`}
-                        className="mx-auto h-[40px] w-auto"
-                      />
+                          {/* Like Button */}
+                          <button
+                            onClick={() => handleLike(index)}
+                            className="p-1.5 rounded-full hover:bg-white/10 transition-colors -mr-2 -mt-1"
+                          >
+                            <Heart
+                              className={clsx(
+                                "w-4 h-4 transition-all duration-300",
+                                isLiked
+                                  ? "fill-red-500 text-red-500"
+                                  : "text-white/20 group-hover:text-white/40",
+                              )}
+                            />
+                          </button>
+                        </div>
+
+                        <p className="text-sm text-gray-300 font-light leading-relaxed line-clamp-4">
+                          {getTestimonialQuote(index)}
+                        </p>
+
+                        <span className="text-[10px] text-white/40 pt-2">
+                          {getTestimonialRole(index)}
+                        </span>
+                      </div>
                     </div>
-
-                    <h4 className="text-1xl my-2 font-semibold">
-                      {getTestimonialName(index)}
-                    </h4>
-
-                    <span className="text-themeDarkGray text-sm">
-                      {getTestimonialRole(index)}
-                    </span>
                   </div>
-                </div>
-              </CarouselItem>
-            ))}
+                </CarouselItem>
+              );
+            })}
           </CarouselContent>
-
-          {/* gradient edges */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 h-full w-2/12 bg-gradient-to-r from-background" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 h-full w-2/12 bg-gradient-to-l from-background" />
         </div>
       </Carousel>
+
+      {/* Like Notification Overlay */}
+      <AnimatePresence>
+        {showNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-md border border-white/10 rounded-full shadow-2xl"
+          >
+            <div className="p-1.5 bg-red-500/20 rounded-full">
+              <Heart className="w-4 h-4 text-red-500 fill-current" />
+            </div>
+            <span className="text-sm font-medium text-white">
+              You liked this feedback!
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Section>
   );
 }

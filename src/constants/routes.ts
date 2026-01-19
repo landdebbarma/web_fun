@@ -8,6 +8,7 @@ export const ROUTES = {
   AnToAnt_AI: '/AnToAntAi',
   LOGIN: '/login',
   SIGNUP: '/signup',
+  FORGOT_PASSWORD: '/forgot-password',
   DASHBOARD: '/AnToAnt',
   COMING_SOON: '/coming-soon',
   NOT_FOUND: '*',

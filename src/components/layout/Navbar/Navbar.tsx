@@ -8,7 +8,7 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="w-full fixed top-0 z-50 bg-transparent">
+    <nav className="w-full fixed top-5 md:top-0 z-50 bg-transparent">
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         {/* LEFT: Desktop Menu */}
         <div className="hidden md:flex text-white rounded-full px-20 py-5 items-center gap-10">
@@ -16,7 +16,7 @@ const Navbar = () => {
             <img
               src="/bglogo.png"
               alt="AnToAnt Logo"
-              className="h-10 w-10 rounded-lg object-cover"
+              className="h-10 w-10 rounded-lg object-cover logo-glitch"
             />
             {/* <span className="text-2xl font-bold flex items-center gap-1">
               AnToAnt <sup className="text-xs">®</sup>
@@ -53,7 +53,7 @@ const Navbar = () => {
             <img
               src="/bglogo.png"
               alt="AnToAnt Logo"
-              className="h-9 w-9 rounded-lg object-cover"
+              className="h-9 w-9 rounded-lg object-cover logo-glitch"
             />
             <span className="text-2xl font-bold text-white flex items-center gap-1">
               AnToAnt <sup className="text-xs">™</sup>
@@ -94,7 +94,7 @@ const Navbar = () => {
 
       {/* MOBILE MENU */}
       {isOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full backdrop-blur-md border-t border-white/10 text-white flex flex-col items-center gap-6 py-6">
+        <div className="md:hidden absolute top-full left-0 w-full bg-black backdrop-blur-md border-t border-white/10 text-white flex flex-col items-center gap-6 py-6">
           <a
             href="/product"
             onClick={() => setIsOpen(false)}

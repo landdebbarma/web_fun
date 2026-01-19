@@ -58,6 +58,19 @@ const DashboardContent: React.FC = () => {
   // Use shared dark mode context
   const { isDarkMode } = useDarkMode();
 
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileWarning, setShowMobileWarning] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const handleDownload = () => {
     if (!downloadUrl) return;
     const link = document.createElement("a");
@@ -73,6 +86,42 @@ const DashboardContent: React.FC = () => {
     if (!aiText.trim()) return;
 
     const userMsg = aiText.trim();
+
+    // Check if on mobile and message looks like architecture creation request
+    // Architecture-related keywords that indicate system design intent
+    const architectureKeywords = [
+      "architecture",
+      "system design",
+      "component tree",
+      "build",
+      "create",
+      "generate",
+      "develop",
+      "app",
+      "application",
+      "website",
+      "project",
+      "microservice",
+      "backend",
+      "frontend",
+      "full stack",
+      "fullstack",
+      "structure",
+      "design pattern",
+      "tech stack",
+    ];
+
+    const lowerMsg = userMsg.toLowerCase();
+    const isArchitectureRequest = architectureKeywords.some((keyword) =>
+      lowerMsg.includes(keyword),
+    );
+
+    // Block architecture creation on mobile
+    if (isMobile && isArchitectureRequest) {
+      setShowMobileWarning(true);
+      return;
+    }
+
     addMessage(userMsg, "user");
     setAiText("");
 
@@ -92,7 +141,7 @@ const DashboardContent: React.FC = () => {
           project.id,
           {
             title: projectName,
-          }
+          },
         );
         setConversationId(conversation.id);
 
@@ -100,7 +149,7 @@ const DashboardContent: React.FC = () => {
           "Created project:",
           project.id,
           "conversation:",
-          conversation.id
+          conversation.id,
         );
       } catch (error) {
         console.error("Failed to create project/conversation:", error);
@@ -140,7 +189,7 @@ const DashboardContent: React.FC = () => {
         setDocData(mockData);
         addMessage(
           "Simulation complete! I've generated a mock architecture for you.",
-          "ai"
+          "ai",
         );
       }, 1500);
       return;
@@ -224,7 +273,7 @@ const DashboardContent: React.FC = () => {
                 }
               }
           }
-        }
+        },
       );
 
       setIsLoading(false);
@@ -247,7 +296,7 @@ const DashboardContent: React.FC = () => {
           finalResponse.questions
         ) {
           const questionsText = (finalResponse.questions as string[]).join(
-            "\n\n"
+            "\n\n",
           );
           addMessage(questionsText, "ai");
           chatMessageShown = true;
@@ -276,7 +325,7 @@ const DashboardContent: React.FC = () => {
         if (!chatMessageShown) {
           addMessage(
             "System design generated! Check the Doc and Graph views.",
-            "ai"
+            "ai",
           );
         }
       } else if (!chatMessageShown) {
@@ -290,7 +339,7 @@ const DashboardContent: React.FC = () => {
         `Failed to get response: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
-        "ai"
+        "ai",
       );
     }
   };
@@ -309,6 +358,98 @@ const DashboardContent: React.FC = () => {
         isDarkMode ? "dark" : ""
       }`}
     >
+      {/* Mobile Warning Modal */}
+      <AnimatePresence>
+        {showMobileWarning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowMobileWarning(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className={`max-w-sm w-full rounded-2xl p-6 shadow-2xl border ${
+                isDarkMode
+                  ? "bg-[#111] border-white/10"
+                  : "bg-white border-gray-200"
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Icon */}
+              <div className="flex justify-center mb-4">
+                <div
+                  className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                    isDarkMode ? "bg-yellow-500/20" : "bg-yellow-100"
+                  }`}
+                >
+                  <svg
+                    className="w-8 h-8 text-yellow-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3
+                className={`text-lg font-bold text-center mb-2 ${
+                  isDarkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Desktop Required
+              </h3>
+
+              {/* Message */}
+              <p
+                className={`text-sm text-center mb-6 ${
+                  isDarkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                System architecture generation requires a desktop browser to
+                view the interactive graph and documentation panels. Please
+                switch to a desktop device to create architecture designs.
+              </p>
+
+              {/* Tip */}
+              <div
+                className={`text-xs text-center mb-6 p-3 rounded-lg ${
+                  isDarkMode
+                    ? "bg-white/5 text-gray-500"
+                    : "bg-gray-50 text-gray-500"
+                }`}
+              >
+                💡 You can still have normal conversations on mobile!
+              </div>
+
+              {/* Button */}
+              <button
+                onClick={() => setShowMobileWarning(false)}
+                className={`w-full py-3 px-4 rounded-full font-semibold text-sm transition-all duration-300 ${
+                  isDarkMode
+                    ? "bg-white text-black hover:bg-gray-200"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
+              >
+                Got it
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* LEFT CHAT PANEL - MODERN "STRUCTURED" DESIGN */}
       <div
         className={`w-full md:w-[30%] h-full flex flex-col relative z-10 rounded-lg border-r ${
@@ -321,7 +462,7 @@ const DashboardContent: React.FC = () => {
             isDarkMode ? "bg-black/50" : "bg-white/50"
           }`}
         >
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
             <span
               className={`font-semibold text-sm tracking-tight ${
@@ -330,7 +471,7 @@ const DashboardContent: React.FC = () => {
             >
               Assistant
             </span>
-          </div>
+          </div> */}
           <div className="flex items-center gap-3">
             <div className="flex gap-2">
               <div
@@ -433,8 +574,8 @@ const DashboardContent: React.FC = () => {
                                 ? "bg-white text-black rounded-2xl rounded-tr-none"
                                 : "bg-black text-white rounded-2xl rounded-tr-none"
                               : isDarkMode
-                              ? "bg-[#111] text-gray-200 border border-white/10 rounded-2xl rounded-tl-none"
-                              : "bg-white text-gray-700 border border-gray-100 rounded-2xl rounded-tl-none"
+                                ? "bg-[#111] text-gray-200 border border-white/10 rounded-2xl rounded-tl-none"
+                                : "bg-white text-gray-700 border border-gray-100 rounded-2xl rounded-tl-none"
                           }`}
                         >
                           {msg.text}
@@ -524,8 +665,8 @@ const DashboardContent: React.FC = () => {
                     ? "bg-white text-black shadow-md scale-100"
                     : "bg-black text-white shadow-md scale-100"
                   : isDarkMode
-                  ? "bg-white/5 text-white/20 scale-90"
-                  : "bg-gray-100 text-gray-300 scale-90"
+                    ? "bg-white/5 text-white/20 scale-90"
+                    : "bg-gray-100 text-gray-300 scale-90"
               }`}
             >
               <svg
@@ -585,8 +726,8 @@ const DashboardContent: React.FC = () => {
                         showGraph
                           ? "text-white"
                           : isDarkMode
-                          ? "text-gray-400 hover:text-gray-200"
-                          : "text-gray-500 hover:text-gray-700"
+                            ? "text-gray-400 hover:text-gray-200"
+                            : "text-gray-500 hover:text-gray-700"
                       }`}
                     >
                       {showGraph && (
@@ -610,8 +751,8 @@ const DashboardContent: React.FC = () => {
                         !showGraph
                           ? "text-white"
                           : isDarkMode
-                          ? "text-gray-400 hover:text-gray-200"
-                          : "text-gray-500 hover:text-gray-700"
+                            ? "text-gray-400 hover:text-gray-200"
+                            : "text-gray-500 hover:text-gray-700"
                       }`}
                     >
                       {!showGraph && (
@@ -790,7 +931,7 @@ const DashboardContent: React.FC = () => {
                               {section.content}
                             </div>
                           </div>
-                        )
+                        ),
                     )}
                   </div>
                 ) : (

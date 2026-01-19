@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfileModal from "./ProfileModal";
+import LogoutModal from "./LogoutModal";
 import { authService } from "@/services/auth";
 import { useDarkMode } from "./useDarkMode";
 import { projectService, type Conversation } from "@/services/project";
@@ -28,6 +29,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
   const [activeModal, setActiveModal] = useState<
     "profile" | "settings" | "upgrade" | null
   >(null);
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
 
   // History state
   const [showHistory, setShowHistory] = useState(false);
@@ -162,9 +164,9 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
 
           /* DESKTOP width */
           md:translate-x-0 
-          ${open ? "md:w-45" : "md:w-20"}
+          ${open ? "md:w-72" : "md:w-20"}
 
-          w-64
+          w-52
         `}
       >
         {/* CLOSE BUTTON FOR MOBILE */}
@@ -201,7 +203,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
         </div>
 
         {/* NAVIGATION */}
-        <nav className="flex flex-col gap-2 px-4 mt-4">
+        <nav className={`flex flex-col gap-2 mt-4 ${open ? "px-8" : "px-4"}`}>
           {/* Overview button */}
           <a
             href="/AnToAntAi"
@@ -262,7 +264,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
         {/* HISTORY PANEL - Shows below navigation when expanded */}
         {showHistory && open && (
           <div
-            className={`mx-4 mt-2 rounded-xl border overflow-hidden transition-all duration-300 max-h-[60vh] flex flex-col ${
+            className={`mx-8 mt-2 rounded-xl border overflow-hidden transition-all duration-300 max-h-[60vh] flex flex-col ${
               isDarkMode
                 ? "bg-white/5 border-white/10 shadow-lg shadow-black/20"
                 : "bg-white border-gray-200 shadow-lg shadow-gray-200/50"
@@ -427,7 +429,10 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
 
                 {/* Sign Out Option */}
                 <button
-                  onClick={handleSignOut}
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    setShowLogoutConfirmation(true);
+                  }}
                   className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-all justify-start"
                 >
                   <LogOut size={18} />
@@ -513,7 +518,6 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
         </div>
       </aside>
 
-      {/* Profile Modal */}
       <ProfileModal
         isOpen={activeModal !== null}
         onClose={closeModal}
@@ -521,7 +525,18 @@ const Slidebar: React.FC<SlidebarProps> = ({ open, setOpen }) => {
         onTabChange={(tab: "profile" | "settings" | "upgrade") =>
           setActiveModal(tab)
         }
-        onSignOut={handleSignOut}
+        onSignOut={() => {
+          setDropdownOpen(false);
+          setActiveModal(null);
+          setShowLogoutConfirmation(true);
+        }}
+      />
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutConfirmation}
+        onClose={() => setShowLogoutConfirmation(false)}
+        onConfirm={handleSignOut}
       />
     </>
   );

@@ -13,6 +13,9 @@ const Overview = lazy(
 );
 const Login = lazy(() => import("@/features/auth/components/Login"));
 const Signup = lazy(() => import("@/features/auth/components/Signup"));
+const ForgotPassword = lazy(
+  () => import("@/features/auth/components/ForgotPassword")
+);
 const GoogleCallback = lazy(
   () => import("@/features/auth/components/GoogleCallback")
 );
@@ -51,6 +54,7 @@ const AppRoutes = () => (
       {/* Auth routes */}
       <Route path={ROUTES.LOGIN} element={<Login />} />
       <Route path={ROUTES.SIGNUP} element={<Signup />} />
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
       <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
       {/* Redirects for backward compatibility and alternate spellings */}
