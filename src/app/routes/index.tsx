@@ -8,19 +8,21 @@ const Home = lazy(() => import("@/pages/HomePage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const AboutUs = lazy(() => import("@/pages/AboutUs"));
 const ComingSoon = lazy(() => import("@/pages/ComingSoon"));
+const PrivacyPolicy = lazy(() => import("@/pages/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("@/pages/TermsConditions"));
 const Overview = lazy(
-  () => import("@/features/kafei-ai/components/KafeiAi/overview")
+  () => import("@/features/kafei-ai/components/KafeiAi/overview"),
 );
 const Login = lazy(() => import("@/features/auth/components/Login"));
 const Signup = lazy(() => import("@/features/auth/components/Signup"));
 const ForgotPassword = lazy(
-  () => import("@/features/auth/components/ForgotPassword")
+  () => import("@/features/auth/components/ForgotPassword"),
 );
 const GoogleCallback = lazy(
-  () => import("@/features/auth/components/GoogleCallback")
+  () => import("@/features/auth/components/GoogleCallback"),
 );
 const Dashboard = lazy(
-  () => import("@/features/kafei-ai/components/KafeiAi/dashboard/main")
+  () => import("@/features/kafei-ai/components/KafeiAi/dashboard/main"),
 );
 
 // Loading fallback component
@@ -49,6 +51,8 @@ const AppRoutes = () => (
       <Route path={ROUTES.PRICING} element={<Home />} />
       <Route path={ROUTES.COMING_SOON} element={<ComingSoon />} />
       <Route path={ROUTES.ABOUT} element={<AboutUs />} />
+      <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicy />} />
+      <Route path={ROUTES.TERMS_CONDITIONS} element={<TermsConditions />} />
       <Route path={ROUTES.AnToAnt_AI} element={withGuard(<Overview />, true)} />
 
       {/* Auth routes */}

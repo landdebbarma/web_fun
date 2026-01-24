@@ -60,12 +60,7 @@ export const GlitchSwap: React.FC<GlitchSwapProps> = ({
       {isGlitching && (
         <>
           {/* Main Glitch Layer - heavily distorted composite */}
-          <motion.div
-            className={`absolute inset-0 z-20 flex items-center justify-center ${
-              isLogo ? logoClassName : className
-            }`} // Use NEXT state style roughly? No, use current or mix.
-            // Actually, purely visual chaos is better. We'll render the "Target" state mostly.
-          >
+          <motion.div className="absolute inset-0 z-20 flex items-center justify-center">
             {/* We render PREV state briefly, then NEXT state. 
                     But to simplify, let's just render the "Next" state distorted.
                  */}
@@ -157,7 +152,8 @@ const GlitchLayer = ({
         // However, the input className has colors. We might need to override.
         // For simplicity, we just use the shape. The 'color' prop is for container text color.
         <div
-          className={`${textClass} text-inherit bg-clip-text text-transparent`}
+          className={`${textClass} mix-blend-normal`}
+          style={{ color: "currentColor" }}
         >
           {text}
         </div>

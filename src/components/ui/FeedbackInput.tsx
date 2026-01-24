@@ -182,9 +182,12 @@ export const FeedbackInput = () => {
                     />
                     <span className="text-xs md:text-sm font-light">
                       I may be contacted about this feedback.{" "}
-                      <span className="text-green-400/80 hover:text-green-400 hover:underline decoration-green-400/30 underline-offset-4 transition-all">
+                      <a
+                        href="/privacy-policy"
+                        className="text-green-400/80 hover:text-green-400 hover:underline decoration-green-400/30 underline-offset-4 transition-all"
+                      >
                         Privacy Policy
-                      </span>
+                      </a>
                     </span>
                   </label>
 

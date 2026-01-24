@@ -69,7 +69,9 @@ const SignUpPage = () => {
     password: "",
     phone: "",
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -83,6 +85,17 @@ const SignUpPage = () => {
       !formData.phone.trim()
     ) {
       setError("Please fill in all fields");
+      return;
+    }
+
+    if (!termsAccepted) {
+      setError("You must accept the Terms & Conditions");
+      return;
+    }
+
+    // Phone validation: must be exactly 10 digits
+    if (!/^\d{10}$/.test(formData.phone.trim())) {
+      setError("Phone number must be exactly 10 digits");
       return;
     }
 
@@ -105,7 +118,7 @@ const SignUpPage = () => {
     }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
       setError(
-        "Password must contain at least one special character (!@#$%^&*...)"
+        "Password must contain at least one special character (!@#$%^&*...)",
       );
       return;
     }
@@ -124,7 +137,7 @@ const SignUpPage = () => {
           password: formData.password.trim(),
           phone: formData.phone.trim(),
         },
-        controller.signal
+        controller.signal,
       );
 
       clearTimeout(timeoutId);
@@ -161,7 +174,7 @@ const SignUpPage = () => {
     const popup = window.open(
       "/auth/google/login",
       "google_login",
-      `width=${width},height=${height},left=${left},top=${top}`
+      `width=${width},height=${height},left=${left},top=${top}`,
     );
 
     if (!popup) {
@@ -216,7 +229,10 @@ const SignUpPage = () => {
       >
         {/* Left Side: Illustration Panel */}
         <div className="w-full md:w-5/12 relative flex flex-col">
-          <InteractiveCharacterPolished />
+          <InteractiveCharacterPolished
+            isPasswordVisible={showPassword}
+            isPasswordFocused={isPasswordFocused}
+          />
         </div>
 
         {/* Right Side: Form */}
@@ -258,7 +274,10 @@ const SignUpPage = () => {
                 required
                 value={formData.phone}
                 onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
+                  setFormData({
+                    ...formData,
+                    phone: e.target.value.replace(/\D/g, ""),
+                  })
                 }
                 disabled={loading}
                 className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-3.5 px-6 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
@@ -286,6 +305,8 @@ const SignUpPage = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
                 disabled={loading}
                 className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-3.5 px-6 pr-12 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
               />
@@ -331,6 +352,31 @@ const SignUpPage = () => {
                   </svg>
                 )}
               </button>
+            </div>
+
+            <div className="flex items-center gap-3 px-1">
+              <input
+                id="terms"
+                type="checkbox"
+                required
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-[#0b3c47] focus:ring-[#0b3c47] cursor-pointer"
+                disabled={loading}
+              />
+              <label
+                htmlFor="terms"
+                className="text-sm text-gray-600 cursor-pointer select-none"
+              >
+                I agree to the{" "}
+                <Link
+                  to={ROUTES.TERMS_CONDITIONS}
+                  target="_blank"
+                  className="text-[#0b3c47] font-semibold hover:underline"
+                >
+                  Terms & Conditions
+                </Link>
+              </label>
             </div>
 
             <button

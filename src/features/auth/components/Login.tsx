@@ -77,6 +77,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -136,7 +137,7 @@ const LoginPage = () => {
           return;
         }
         throw new Error(
-          "No auth token returned from server. Please try logging in again."
+          "No auth token returned from server. Please try logging in again.",
         );
       }
 
@@ -163,12 +164,12 @@ const LoginPage = () => {
 
         if (detail === "Not authenticated") {
           throw new Error(
-            "User not authenticated. Please register or check credentials."
+            "User not authenticated. Please register or check credentials.",
           );
         }
 
         throw new Error(
-          String(data?.message || detail || "Login failed to validate user")
+          String(data?.message || detail || "Login failed to validate user"),
         );
       }
     } catch (err: unknown) {
@@ -225,7 +226,7 @@ const LoginPage = () => {
     const popup = window.open(
       "/auth/google/login",
       "google_login",
-      `width=${width},height=${height},left=${left},top=${top}`
+      `width=${width},height=${height},left=${left},top=${top}`,
     );
 
     if (!popup) {
@@ -245,7 +246,10 @@ const LoginPage = () => {
       <div className="relative w-full max-w-[1000px] min-h-[700px] bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] shadow-2xl flex flex-col md:flex-row overflow-hidden ring-1 ring-white/5">
         {/* Left Side: Illustration Panel */}
         <div className="w-full md:w-5/12 relative flex flex-col">
-          <InteractiveCharacterPolished />
+          <InteractiveCharacterPolished
+            isPasswordVisible={showPassword}
+            isPasswordFocused={isPasswordFocused}
+          />
         </div>
 
         {/* Right Side: Form */}
@@ -293,6 +297,8 @@ const LoginPage = () => {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
                   disabled={loading}
                   className="w-full bg-white/5 border border-black/10 text-black rounded-2xl py-4 px-6 pr-12 text-base outline-none focus:border-[#0b3c47] focus:ring-4 focus:ring-[#0b3c47]/10 transition-all duration-200 placeholder-gray-500 disabled:opacity-50 hover:bg-white/[0.07]"
                 />

@@ -39,7 +39,7 @@ const Footer: React.FC = () => {
       `}</style>
 
       {/* Main Footer Card */}
-      <div className="relative z-10 w-full max-w-[1200px] bg-black shadow-white rounded-[2.5rem] shadow-xl p-8 md:p-12 lg:p-16">
+      <div className="relative z-10 w-full max-w-[1200px] bg-black shadow-white rounded-[2.5rem] shadow-lg p-8 md:p-12 lg:p-16">
         {/* Background Watermark */}
         <div className="absolute top-[200px] left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none z-0 hidden md:block w-full text-center">
           <GlitchSwap
@@ -187,13 +187,13 @@ const Footer: React.FC = () => {
 
           <div className="flex items-center gap-8">
             <a
-              href="/coming-soon"
+              href="/privacy-policy"
               className="hover:text-white hover:underline underline-offset-4 transition-all"
             >
               Privacy Policy
             </a>
             <a
-              href="/coming-soon"
+              href="/terms-and-conditions"
               className="hover:text-white hover:underline underline-offset-4 transition-all"
             >
               Terms of Service

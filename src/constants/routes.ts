@@ -11,6 +11,8 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   DASHBOARD: '/AnToAnt',
   COMING_SOON: '/coming-soon',
+  PRIVACY_POLICY: '/privacy-policy',
+  TERMS_CONDITIONS: '/terms-and-conditions',
   NOT_FOUND: '*',
 } as const;
 

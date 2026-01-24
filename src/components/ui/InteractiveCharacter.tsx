@@ -3,14 +3,20 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
-export const InteractiveCharacterPolished = () => {
+export const InteractiveCharacterPolished = ({
+  isPasswordVisible = false,
+  isPasswordFocused = false,
+}: {
+  isPasswordVisible?: boolean;
+  isPasswordFocused?: boolean;
+}) => {
   const [isHovered, setIsHovered] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isClicking, setIsClicking] = useState(false);
   const [blink, setBlink] = useState(false);
 
-  // Emotion State: "neutral", "happy", "suspicious", "surprised", "love"
-  const [emotion, setEmotion] = useState("neutral");
+  // Idle Emotion State: "neutral", "happy", "suspicious", "surprised", "funny"
+  const [idleEmotion, setIdleEmotion] = useState("neutral");
 
   // Mouse Tracking
   useEffect(() => {
@@ -40,46 +46,48 @@ export const InteractiveCharacterPolished = () => {
 
   // Idle Emotion Cycling
   useEffect(() => {
-    if (isHovered) return; // Don't cycle if user is interacting
+    if (isHovered || isPasswordFocused || isPasswordVisible) return;
 
-    // Added "funny" to the roster
     const emotions = ["neutral", "suspicious", "surprised", "happy", "funny"];
     const cycleEmotions = () => {
       const randomEmotion =
         emotions[Math.floor(Math.random() * emotions.length)];
-      setEmotion(randomEmotion);
+      setIdleEmotion(randomEmotion);
 
-      // Stay in this mood for a random time
       const nextChange = Math.random() * 5000 + 3000;
       setTimeout(cycleEmotions, nextChange);
     };
 
     const timeoutId = setTimeout(cycleEmotions, 3000);
     return () => clearTimeout(timeoutId);
-  }, [isHovered]);
+  }, [isHovered, isPasswordFocused, isPasswordVisible]);
 
-  // Reactive Emotions
-  useEffect(() => {
-    if (isClicking) {
-      setEmotion("surprised");
-    } else if (isHovered) {
-      setEmotion("love");
-    } else {
-      setEmotion("neutral"); // Reset to neutral immediately on leave, idle loop will pick up
-    }
-  }, [isHovered, isClicking]);
+  // Determine Effective Emotion
+  let emotion = idleEmotion;
+  if (isPasswordVisible) emotion = "innocent";
+  else if (isPasswordFocused) emotion = "nosy";
+  else if (isClicking) emotion = "surprised";
+  else if (isHovered) emotion = "love";
 
-  // Movement Dampening
-  const headX = mousePosition.x * 15;
-  const headY = mousePosition.y * 10;
-  const eyeX = mousePosition.x * 20;
-  const eyeY = mousePosition.y * 15;
+  // Movement & Positioning Logic
+  let headX = mousePosition.x * 15;
+  let headY = mousePosition.y * 10;
+  let eyeX = mousePosition.x * 20;
+  let eyeY = mousePosition.y * 15;
 
-  // --- EYE SHAPE DEFINITIONS ---
-
-  // Simplified paths for smoother morphing (keeping mostly rect-based control points for simplicity or swapping distinct shapes)
-  // Actually, for Framer Motion layoutId or d-path morphing, distinct paths are fine if vertex counts match reasonably,
-  // but here we might switch render strategies. Let's use specific SVG shapes for complex emotions.
+  // Modify positions based on emotion
+  if (emotion === "nosy") {
+    // Lean in / Move head down and towards the cursor more aggressively
+    headY = headY + 15; // Move closer
+    headX = headX * 1.5; // Exaggerate X movement to "peek" around
+    eyeY = eyeY + 10;
+  } else if (emotion === "innocent") {
+    // Look away (Up and Left)
+    eyeX = -25;
+    eyeY = -25;
+    headX = -10;
+    headY = -15; // Tilt head up
+  }
 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full bg-[#050505] overflow-hidden font-sans">
@@ -89,7 +97,10 @@ export const InteractiveCharacterPolished = () => {
         onMouseLeave={() => setIsHovered(false)}
         onMouseDown={() => setIsClicking(true)}
         onMouseUp={() => setIsClicking(false)}
-        animate={{ scale: isClicking ? 0.95 : 1 }}
+        animate={{
+          scale: isClicking ? 0.95 : emotion === "nosy" ? 1.05 : 1,
+        }}
+        transition={{ duration: 0.3 }}
       >
         <svg
           viewBox="0 0 400 400"
@@ -106,19 +117,25 @@ export const InteractiveCharacterPolished = () => {
 
           {/* --- ANTENNA --- */}
           <motion.g
-            style={{ originX: "100px", originY: "100px", x: headX, y: headY }}
             animate={{
+              x: headX,
+              y: headY,
               rotate:
                 emotion === "happy" || emotion === "love"
                   ? [0, -10, 5, -5, 0]
                   : emotion === "funny"
-                  ? [0, 20, -20, 10, -10, 0] // Wild spinning for funny
-                  : 0,
+                    ? [0, 20, -20, 10, -10, 0]
+                    : emotion === "nosy"
+                      ? [0, 5, -5, 0] // Twitching antenna when nosy
+                      : 0,
             }}
+            style={{ originX: "100px", originY: "100px" }}
             transition={{
-              duration: emotion === "funny" ? 0.5 : 0.6,
-              repeat: Infinity,
-              repeatDelay: emotion === "funny" ? 0 : 1,
+              rotate: {
+                duration: emotion === "funny" ? 0.5 : 2,
+                repeat: Infinity,
+                repeatDelay: emotion === "funny" ? 0 : 0.5,
+              },
             }}
           >
             <path
@@ -137,17 +154,20 @@ export const InteractiveCharacterPolished = () => {
                 fill:
                   emotion === "love"
                     ? "#ec4899"
-                    : emotion === "suspicious"
-                    ? "#f59e0b"
-                    : emotion === "funny"
-                    ? "#8b5cf6"
-                    : "#E5E5E5",
+                    : emotion === "suspicious" || emotion === "nosy"
+                      ? "#f59e0b"
+                      : emotion === "funny"
+                        ? "#8b5cf6"
+                        : "#E5E5E5",
               }}
             />
           </motion.g>
 
           {/* --- SIDE BUMPERS (Ears) --- */}
-          <motion.g style={{ x: headX * 0.5, y: headY * 0.5 }}>
+          <motion.g
+            animate={{ x: headX * 0.5, y: headY * 0.5 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          >
             <path
               d="M50 160 L50 210"
               stroke="#525252"
@@ -171,11 +191,15 @@ export const InteractiveCharacterPolished = () => {
             stroke="#E5E5E5"
             strokeWidth="16"
             strokeLinejoin="round"
-            style={{ x: headX, y: headY }}
+            animate={{ x: headX, y: headY }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
           />
 
           {/* --- EYES CONTAINER --- */}
-          <motion.g style={{ x: eyeX, y: eyeY }}>
+          <motion.g
+            animate={{ x: eyeX, y: eyeY }}
+            transition={{ type: "spring", stiffness: 250, damping: 25 }}
+          >
             {/* 1. LEFT EYE PATCH */}
             <path
               d="M110 150 L160 140 L190 150 L195 210 L180 240 L120 250 L100 200 Z"
@@ -191,16 +215,19 @@ export const InteractiveCharacterPolished = () => {
                     emotion === "love"
                       ? 45
                       : emotion === "suspicious"
-                      ? 15
-                      : emotion === "funny"
-                      ? [0, 360]
-                      : 0,
-                  scale: emotion === "surprised" ? 1.3 : 1,
+                        ? 15
+                        : emotion === "innocent"
+                          ? -15
+                          : emotion === "funny"
+                            ? [0, 360]
+                            : 0,
+                  scale:
+                    emotion === "surprised" || emotion === "nosy" ? 1.2 : 1,
                 }}
                 transition={
                   emotion === "funny"
                     ? { duration: 1, repeat: Infinity, ease: "linear" }
-                    : {}
+                    : { duration: 0.3 }
                 }
               >
                 <line
@@ -212,8 +239,8 @@ export const InteractiveCharacterPolished = () => {
                     emotion === "love"
                       ? "#ec4899"
                       : emotion === "funny"
-                      ? "#8b5cf6"
-                      : "#E5E5E5"
+                        ? "#8b5cf6"
+                        : "#E5E5E5"
                   }
                   strokeWidth="8"
                   strokeLinecap="round"
@@ -227,8 +254,8 @@ export const InteractiveCharacterPolished = () => {
                     emotion === "love"
                       ? "#ec4899"
                       : emotion === "funny"
-                      ? "#8b5cf6"
-                      : "#E5E5E5"
+                        ? "#8b5cf6"
+                        : "#E5E5E5"
                   }
                   strokeWidth="8"
                   strokeLinecap="round"
@@ -238,7 +265,6 @@ export const InteractiveCharacterPolished = () => {
 
             {/* 3. RIGHT EYE (The Expressive One) */}
             <g transform="translate(230, 170)">
-              {/* Backing Glow */}
               <motion.rect
                 width="25"
                 height="40"
@@ -249,15 +275,13 @@ export const InteractiveCharacterPolished = () => {
                   emotion === "love"
                     ? "#ec4899"
                     : emotion === "funny"
-                    ? "#8b5cf6"
-                    : "#3b82f6"
+                      ? "#8b5cf6"
+                      : "#3b82f6"
                 }
                 className="opacity-20"
               />
 
-              {/* The Actual Eye Shape */}
               {emotion === "love" ? (
-                /* Heart Shape for Love */
                 <motion.path
                   d="M10 5 Q15 0 20 5 T20 20 L10 32 L0 20 Q0 0 10 5"
                   fill="#ec4899"
@@ -265,28 +289,31 @@ export const InteractiveCharacterPolished = () => {
                   animate={{ scale: 1 }}
                 />
               ) : (
-                /* Morphing Rect/Circle/Slit */
                 <motion.path
                   fill={
-                    emotion === "suspicious"
+                    emotion === "suspicious" || emotion === "nosy"
                       ? "#f59e0b"
                       : emotion === "funny"
-                      ? "#8b5cf6"
-                      : "#3b82f6"
+                        ? "#8b5cf6"
+                        : "#3b82f6"
                   }
                   animate={{
                     d:
-                      emotion === "happy"
-                        ? "M0 15 Q10 5 20 15 V35 H0 Z" // Happy arch
-                        : emotion === "suspicious"
-                        ? "M0 12 H20 V22 H0 Z" // Thin slit
-                        : emotion === "surprised"
-                        ? "M10 0 A10 10 0 0 1 10 35 A10 10 0 0 1 10 0" // Open circle
-                        : emotion === "funny"
-                        ? "M5 0 A10 10 0 0 1 5 35 A5 10 0 0 1 5 0" // Squashed oval
-                        : "M0 0 H20 V35 H0 Z", // Neutral Rect (default)
-                    scaleY: blink ? 0.1 : 1,
-                    y: emotion === "funny" ? [0, -5, 0] : 0, // Bounce in funny mode
+                      emotion === "nosy"
+                        ? "M0 10 Q10 0 20 10 V35 H0 Z" // Wide open curious eye
+                        : emotion === "innocent"
+                          ? "M0 15 Q10 25 20 15 V35 H0 Z" // Looking UP/Away (pupil feels shifted)
+                          : emotion === "happy"
+                            ? "M0 15 Q10 5 20 15 V35 H0 Z"
+                            : emotion === "suspicious"
+                              ? "M0 12 H20 V22 H0 Z"
+                              : emotion === "surprised"
+                                ? "M10 0 A10 10 0 0 1 10 35 A10 10 0 0 1 10 0"
+                                : emotion === "funny"
+                                  ? "M5 0 A10 10 0 0 1 5 35 A5 10 0 0 1 5 0"
+                                  : "M0 0 H20 V35 H0 Z",
+                    scaleY: blink && emotion !== "nosy" ? 0.1 : 1, // Don't blink when nosy/peeking!
+                    y: emotion === "funny" ? [0, -5, 0] : 0,
                   }}
                   transition={{
                     d: { duration: 0.3 },
@@ -300,22 +327,27 @@ export const InteractiveCharacterPolished = () => {
 
           {/* --- MOUTH --- */}
           <motion.path
-            fill={emotion === "funny" ? "#ef4444" : "none"} // Fill red tongue for funny
+            fill={emotion === "funny" ? "#ef4444" : "none"}
             stroke={emotion === "funny" ? "none" : "#E5E5E5"}
             strokeWidth={emotion === "funny" ? "0" : "6"}
             strokeLinecap="round"
-            style={{ x: headX, y: headY }}
             animate={{
+              x: headX,
+              y: headY,
               d:
-                emotion === "happy" || emotion === "love"
-                  ? "M160 245 Q200 270 240 245" // Smile
-                  : emotion === "surprised"
-                  ? "M190 245 Q200 260 210 245" // O-mouth small
-                  : emotion === "suspicious"
-                  ? "M170 250 L230 245" // Crooked line
-                  : emotion === "funny"
-                  ? "M180 250 Q200 280 220 250" // Tongue out!
-                  : "M160 250 Q200 250 240 250", // Neutral
+                emotion === "nosy"
+                  ? "M190 250 Q200 260 210 250" // Small 'o' mouth (curious)
+                  : emotion === "innocent"
+                    ? "M180 250 Q190 245 200 250" // Small whistle side mouth
+                    : emotion === "happy" || emotion === "love"
+                      ? "M160 245 Q200 270 240 245"
+                      : emotion === "surprised"
+                        ? "M190 245 Q200 260 210 245"
+                        : emotion === "suspicious"
+                          ? "M170 250 L230 245"
+                          : emotion === "funny"
+                            ? "M180 250 Q200 280 220 250"
+                            : "M160 250 Q200 250 240 250",
             }}
             transition={{ duration: 0.3 }}
           />
@@ -332,27 +364,33 @@ export const InteractiveCharacterPolished = () => {
               className={`w-2 h-2 rounded-full`}
               animate={{
                 backgroundColor:
-                  emotion === "love"
-                    ? "#ec4899"
-                    : emotion === "suspicious"
-                    ? "#f59e0b"
-                    : emotion === "funny"
-                    ? "#8b5cf6"
-                    : "#22c55e",
+                  emotion === "innocent"
+                    ? "#3b82f6" // Blue for innocent
+                    : emotion === "nosy"
+                      ? "#f59e0b" // Orange/Amber
+                      : emotion === "love"
+                        ? "#ec4899"
+                        : emotion === "funny"
+                          ? "#8b5cf6"
+                          : "#22c55e",
                 opacity: [1, 0.5, 1],
               }}
               transition={{ duration: 2, repeat: Infinity }}
             />
             <span className="font-mono text-gray-400 text-sm tracking-[0.2em] uppercase">
-              {emotion === "love"
-                ? "LOVE_MODE"
-                : emotion === "suspicious"
-                ? "ANALYZING"
-                : emotion === "surprised"
-                ? "ALERT"
-                : emotion === "funny"
-                ? "BRAIN_FREEZE"
-                : "SYSTEM_ONLINE"}
+              {emotion === "innocent"
+                ? "DIDN'T_SEE_IT"
+                : emotion === "nosy"
+                  ? "TRYING_TO_LOOK"
+                  : emotion === "love"
+                    ? "LOVE_MODE"
+                    : emotion === "suspicious"
+                      ? "ANALYZING"
+                      : emotion === "surprised"
+                        ? "ALERT"
+                        : emotion === "funny"
+                          ? "BRAIN_FREEZE"
+                          : "SYSTEM_ONLINE"}
             </span>
           </div>
         </motion.div>

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import TestimonialsEditorial from "@/components/ui/TestimonialsEditorial";
 import { motion } from "framer-motion";
 import { ValuesBento } from "@/components/ui/ValuesBento";
-import { FeedbackInput } from "@/components/ui/FeedbackInput";
+import { FeedbackWidget } from "@/components/ui/FeedbackWidget";
 
 const AboutUs = () => {
   const navigate = useNavigate();
@@ -172,9 +172,9 @@ const AboutUs = () => {
               </div>
             </motion.div>
           </section>
-
-          <FeedbackInput />
         </main>
+
+        <FeedbackWidget />
 
         <Footer />
       </div>
