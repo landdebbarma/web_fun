@@ -83,6 +83,18 @@ export default defineConfig({
         target: 'http://localhost:8006',
         changeOrigin: true,
       },
+      '/auth/forgot-password': {
+        target: 'http://localhost:8006',
+        changeOrigin: true,
+      },
+      '/auth/verify-otp': {
+        target: 'http://localhost:8006',
+        changeOrigin: true,
+      },
+      '/auth/change-password': {
+        target: 'http://localhost:8006',
+        changeOrigin: true,
+      },
       '/users': {
         target: 'http://localhost:8006',
         changeOrigin: true,

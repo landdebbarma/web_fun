@@ -47,4 +47,19 @@ export const authService = {
   logout: async (token?: string): Promise<{ message?: string }> => {
     return apiClient.post("/auth/logout", {}, { token });
   },
+
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    return apiClient.post("/auth/forgot-password", { email });
+  },
+
+  verifyOtp: async (email: string, otp: string): Promise<{ message: string; token?: string }> => {
+    return apiClient.post("/auth/verify-otp", { email, otp });
+  },
+
+  changePassword: async (
+    token: string,
+    new_password: string
+  ): Promise<{ message: string }> => {
+    return apiClient.post("/auth/change-password", { token, new_password });
+  },
 };

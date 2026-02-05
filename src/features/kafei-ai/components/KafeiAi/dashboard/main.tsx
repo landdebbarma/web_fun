@@ -62,6 +62,41 @@ const DashboardContent: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileWarning, setShowMobileWarning] = useState(false);
 
+  // Resizable split view state
+  const [leftPanelWidth, setLeftPanelWidth] = useState(30); // percentage
+  const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+
+      const containerWidth = window.innerWidth;
+      const newWidthPercent = (e.clientX / containerWidth) * 100;
+
+      // Constrain between 20% and 60%
+      const constrainedWidth = Math.max(20, Math.min(60, newWidthPercent));
+      setLeftPanelWidth(constrainedWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.body.style.cursor = "default";
+      document.body.style.userSelect = "auto"; // Re-enable text selection
+    };
+
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none"; // Disable text selection while resizing
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768); // md breakpoint
@@ -455,6 +490,9 @@ const DashboardContent: React.FC = () => {
         className={`w-full md:w-[30%] h-full flex flex-col relative z-10 rounded-lg border-r ${
           isDarkMode ? "bg-black border-white/5" : "bg-gray-50 border-gray-200"
         }`}
+        style={{
+          width: window.innerWidth >= 768 ? `${leftPanelWidth}%` : undefined,
+        }}
       >
         {/* Header */}
         <div
@@ -687,8 +725,19 @@ const DashboardContent: React.FC = () => {
         </div>
       </div>
 
+      {/* RESIZE HANDLE */}
+      <div
+        className={`hidden md:block w-1 hover:bg-purple-500/50 cursor-col-resize z-40 transition-colors ${
+          isResizing ? "bg-purple-500" : "bg-transparent"
+        }`}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsResizing(true);
+        }}
+      />
+
       {/* RIGHT FLOW PANEL */}
-      <div className="w-full md:w-[70%] h-full hidden md:block p-1">
+      <div className="w-full flex-1 h-full hidden md:block p-1">
         <ReactFlowProvider>
           <div
             className={`relative w-full h-full rounded-xl overflow-hidden shadow-inner ${
@@ -852,7 +901,7 @@ const DashboardContent: React.FC = () => {
               >
                 {docData ? (
                   <div className="max-w-3xl mx-auto space-y-8 pb-20">
-                    <div className="space-y-2 border-b border-gray-200/10 pb-6">
+                    <div className="space-y-2 border-b border-gray-200/10 pb-6 text-center">
                       <h2
                         className={`text-3xl font-bold tracking-tight ${
                           isDarkMode ? "text-white" : "text-gray-900"

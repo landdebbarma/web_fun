@@ -193,7 +193,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                       </div>
 
                       {/* Action buttons */}
-                      <div className="flex gap-2 mb-2">
+                      <div className="flex gap-2 mb-1">
                         <button
                           onClick={() => onTabChange("settings")}
                           className="px-4 py-1.5 bg-transparent border border-white/20 text-white text-xs font-medium rounded-lg hover:bg-white/5 transition-all flex items-center gap-2"

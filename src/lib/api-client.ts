@@ -39,6 +39,18 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return data as T;
 }
 
+// Get API base URL from environment
+// In development, use empty string (Vite proxy handles routing)
+// In production, use the VITE_API_BASE_URL
+const API_BASE_URL = import.meta.env.PROD 
+  ? (import.meta.env.VITE_API_BASE_URL || "") 
+  : "";
+
+// Build full URL with base
+function getFullUrl(path: string): string {
+  return `${API_BASE_URL}${path}`;
+}
+
 export const apiClient = {
   get: async <T>(url: string, config: RequestConfig = {}): Promise<T> => {
     const headers = new Headers(config.headers);
@@ -48,7 +60,7 @@ export const apiClient = {
       headers.set("Authorization", `Bearer ${config.token}`);
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(getFullUrl(url), {
       ...config,
       method: "GET",
       headers,
@@ -66,7 +78,7 @@ export const apiClient = {
       headers.set("Authorization", `Bearer ${config.token}`);
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(getFullUrl(url), {
       ...config,
       method: "POST",
       headers,
@@ -91,7 +103,7 @@ export const apiClient = {
       headers.set("Authorization", `Bearer ${config.token}`);
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(getFullUrl(url), {
       ...config,
       method: "POST",
       headers,
@@ -190,7 +202,7 @@ export const apiClient = {
 
   // Expose raw fetch for edge cases if needed, but typed
   request: async <T>(url: string, config: RequestConfig = {}): Promise<T> => {
-     const response = await fetch(url, config);
+     const response = await fetch(getFullUrl(url), config);
      return handleResponse<T>(response);
   }
 };

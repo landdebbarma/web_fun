@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
 const testimonials = [
   {
     id: 1,
@@ -18,7 +17,7 @@ const testimonials = [
     author: "Land",
     role: "Co-Founder & CTO",
     company: "AnToAnt",
-    image: "",
+    image: "/land_profile.png",
   },
 ];
 
