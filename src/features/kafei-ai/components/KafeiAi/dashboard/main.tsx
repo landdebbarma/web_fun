@@ -15,14 +15,29 @@ import { projectService } from "@/services/project";
 import InfoNode from "../InfoNode";
 import CompactAnimatedSphere from "@/components/ui/CompactAnimatedSphere";
 import { useDarkMode } from "./useDarkMode";
+import { DocSection } from "./components/DocSection";
+import { UserGuideToggle } from "./components/UserGuideToggle";
 
 const nodeTypes = { infoNode: InfoNode };
 
 // Inner component that uses the dark mode context (must be inside DarkModeProvider)
 const DashboardContent: React.FC = () => {
-  const { nodes, edges, onNodesChange, onEdgesChange, updateFlowFromAI } =
-    useFlowData();
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    updateFlowFromAI,
+    toggleFolder,
+  } = useFlowData();
   const { messages, addMessage } = useChatMessages();
+
+  // Handle node clicks for expansion
+  const onNodeClick = (_: React.MouseEvent, node: any) => {
+    if (node.data?.fullPath) {
+      toggleFolder(node.data.fullPath);
+    }
+  };
 
   const [aiText, setAiText] = useState("");
   const [docData, setDocData] = useState<AIResult | null>(null);
@@ -234,6 +249,8 @@ const DashboardContent: React.FC = () => {
       // Accumulators for project build streaming
       let systemDesignContent = "";
       let componentTree: { folders: string[] } | null = null;
+      let chatContent = "";
+      let currentMessageId: string | null = null;
       let chatMessageShown = false;
 
       // Use streaming API - handles both regular JSON and SSE streams
@@ -245,8 +262,15 @@ const DashboardContent: React.FC = () => {
             case "chat":
               // Normal chat response - show in chat box
               if (event.reply || event.message) {
-                const reply = (event.reply || event.message) as string;
-                addMessage(reply, "ai");
+                const chunk = (event.reply || event.message) as string;
+                chatContent += chunk;
+
+                if (!currentMessageId) {
+                  currentMessageId = crypto.randomUUID();
+                }
+
+                // Update or add message with strict ID to prevent duplicates
+                addMessage(chatContent, "ai", currentMessageId);
                 chatMessageShown = true;
               }
               break;
@@ -282,6 +306,18 @@ const DashboardContent: React.FC = () => {
               // System design chunk - accumulate for doc view
               if (event.chunk) {
                 systemDesignContent += event.chunk as string;
+
+                // Update doc view in real-time
+                setDocData((prev) => ({
+                  ...(prev || {}),
+                  system_design: systemDesignContent,
+                  component_tree: prev?.component_tree ||
+                    componentTree || { folders: [] },
+                  architecture: prev?.architecture || "Generating...",
+                  tech_stack: prev?.tech_stack || [],
+                  risks: prev?.risks || "",
+                  deployment: prev?.deployment || "",
+                }));
               }
               break;
 
@@ -289,6 +325,18 @@ const DashboardContent: React.FC = () => {
               // Component tree - store for graph view
               if (event.chunk) {
                 componentTree = event.chunk as { folders: string[] };
+
+                // Update graph view in real-time
+                setDocData((prev) => ({
+                  ...(prev || {}),
+                  component_tree: componentTree!,
+                  // Keep text content stable
+                  system_design: prev?.system_design || systemDesignContent,
+                  architecture: prev?.architecture || "Generating...",
+                  tech_stack: prev?.tech_stack || [],
+                  risks: prev?.risks || "",
+                  deployment: prev?.deployment || "",
+                }));
               }
               break;
 
@@ -484,7 +532,6 @@ const DashboardContent: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
       {/* LEFT CHAT PANEL - MODERN "STRUCTURED" DESIGN */}
       <div
         className={`w-full md:w-[30%] h-full flex flex-col relative z-10 rounded-lg border-r ${
@@ -724,7 +771,6 @@ const DashboardContent: React.FC = () => {
           </div>
         </div>
       </div>
-
       {/* RESIZE HANDLE */}
       <div
         className={`hidden md:block w-1 hover:bg-purple-500/50 cursor-col-resize z-40 transition-colors ${
@@ -735,9 +781,13 @@ const DashboardContent: React.FC = () => {
           setIsResizing(true);
         }}
       />
-
       {/* RIGHT FLOW PANEL */}
-      <div className="w-full flex-1 h-full hidden md:block p-1">
+      <div className="w-full flex-1 h-full hidden md:block p-1 relative">
+        {/* User Guide Toggle - Top Right Absolute */}
+        <div className="absolute top-5 right-5 z-50">
+          {showGraph && <UserGuideToggle />}
+        </div>
+
         <ReactFlowProvider>
           <div
             className={`relative w-full h-full rounded-xl overflow-hidden shadow-inner ${
@@ -879,6 +929,7 @@ const DashboardContent: React.FC = () => {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 nodeTypes={nodeTypes}
+                onNodeClick={onNodeClick}
                 proOptions={{ hideAttribution: true }}
                 className="w-full h-full"
                 fitView
@@ -900,7 +951,7 @@ const DashboardContent: React.FC = () => {
                 }`}
               >
                 {docData ? (
-                  <div className="max-w-3xl mx-auto space-y-8 pb-20">
+                  <div className="max-w-3xl mx-auto space-y-8 pb-20 mt-10">
                     <div className="space-y-2 border-b border-gray-200/10 pb-6 text-center">
                       <h2
                         className={`text-3xl font-bold tracking-tight ${
@@ -957,29 +1008,13 @@ const DashboardContent: React.FC = () => {
                     ].map(
                       (section) =>
                         section.content && (
-                          <div
+                          <DocSection
                             key={section.title}
-                            className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700"
-                          >
-                            <h3
-                              className={`text-lg font-semibold flex items-center gap-2 ${
-                                isDarkMode
-                                  ? "text-purple-400"
-                                  : "text-purple-600"
-                              }`}
-                            >
-                              {section.title}
-                            </h3>
-                            <div
-                              className={`p-5 rounded-xl border leading-relaxed text-sm whitespace-pre-wrap ${
-                                isDarkMode
-                                  ? "bg-[#111] border-white/5 text-gray-300"
-                                  : "bg-white border-gray-100 text-gray-700 shadow-sm"
-                              }`}
-                            >
-                              {section.content}
-                            </div>
-                          </div>
+                            title={section.title}
+                            content={section.content}
+                            isDarkMode={isDarkMode}
+                            isStreaming={isLoading}
+                          />
                         ),
                     )}
                   </div>

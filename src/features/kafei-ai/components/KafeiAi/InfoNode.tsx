@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Handle, Position } from "reactflow";
-import { motion, AnimatePresence } from "framer-motion";
+import { memo, useMemo } from "react";
+import { Handle, Position, type NodeProps } from "reactflow";
+import { motion } from "framer-motion";
 
 interface InfoNodeData {
   label: string;
@@ -10,175 +10,163 @@ interface InfoNodeData {
   fullPath?: string;
 }
 
-interface InfoNodeProps {
-  data: InfoNodeData;
-}
+// Vibrant but professional color palette
+const COLORS = [
+  "bg-blue-600", // Frontend/UI
+  "bg-violet-600", // Backend/API
+  "bg-emerald-600", // Database/Store
+  "bg-rose-600", // Auth/Security
+  "bg-amber-600", // Utils/Common
+  "bg-cyan-600", // Networking
+  "bg-fuchsia-600", // Services
+  "bg-slate-800", // Default/Core
+];
 
-const InfoNode = ({ data }: InfoNodeProps) => {
-  const [expanded, setExpanded] = useState(false);
+// Map common keywords to specific colors for consistency
+const getKeywordColor = (label: string): string | null => {
+  const lower = label.toLowerCase();
+
+  if (
+    lower.includes("front") ||
+    lower.includes("ui") ||
+    lower.includes("client") ||
+    lower.includes("page")
+  )
+    return "bg-blue-600";
+  if (
+    lower.includes("back") ||
+    lower.includes("api") ||
+    lower.includes("server") ||
+    lower.includes("route")
+  )
+    return "bg-violet-600";
+  if (
+    lower.includes("data") ||
+    lower.includes("store") ||
+    lower.includes("db") ||
+    lower.includes("sql") ||
+    lower.includes("prisma")
+  )
+    return "bg-emerald-600";
+  if (
+    lower.includes("auth") ||
+    lower.includes("login") ||
+    lower.includes("user") ||
+    lower.includes("guard")
+  )
+    return "bg-rose-600";
+  if (
+    lower.includes("util") ||
+    lower.includes("lib") ||
+    lower.includes("common") ||
+    lower.includes("shared")
+  )
+    return "bg-amber-600";
+  if (
+    lower.includes("net") ||
+    lower.includes("http") ||
+    lower.includes("fetch")
+  )
+    return "bg-cyan-600";
+  if (
+    lower.includes("service") ||
+    lower.includes("worker") ||
+    lower.includes("job")
+  )
+    return "bg-fuchsia-600";
+  if (
+    lower.includes("github") ||
+    lower.includes("docker") ||
+    lower.includes("config") ||
+    lower === "src"
+  )
+    return "bg-slate-800";
+
+  return null;
+};
+
+const InfoNode = ({ data }: NodeProps<InfoNodeData>) => {
+  const bgColor = useMemo(() => {
+    if (!data.label) return "bg-slate-900";
+
+    // 1. Try keyword match
+    const keywordColor = getKeywordColor(data.label);
+    if (keywordColor) return keywordColor;
+
+    // 2. Fallback to hash-based consistent color
+    let hash = 0;
+    for (let i = 0; i < data.label.length; i++) {
+      hash = data.label.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % COLORS.length;
+    return COLORS[index];
+  }, [data.label]);
 
   return (
     <motion.div
-      layout
-      transition={{ layout: { duration: 0.3, type: "spring" } }}
-      onClick={() => setExpanded(!expanded)}
-      className={`bg-white dark:bg-[#1a1a1a] shadow-lg hover:shadow-xl rounded-2xl border border-gray-200 dark:border-white/10 p-0 relative cursor-pointer overflow-hidden group transition-colors duration-300 ${
-        expanded ? "w-80 z-50 ring-2 ring-purple-500/20" : "w-60"
-      }`}
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className={`min-w-[180px] min-h-[160px] rounded-3xl p-5 flex flex-col items-center justify-between ${bgColor} border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.2)] transition-all duration-300 group`}
     >
-      {/* Target Handle (Input) - Top */}
+      {/* Target Handle */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white dark:!border-[#1a1a1a] !-top-1.5 !left-1/2 !-translate-x-1/2 transition-all group-hover:!bg-purple-400"
+        className="!w-4 !h-1.5 !rounded-full !bg-white !border-none transition-colors opacity-0 group-hover:opacity-100"
       />
 
-      {/* Main Content Container */}
-      <div className="p-4">
-        {/* Header Row */}
-        <motion.div
-          layout="position"
-          className="flex items-start justify-between gap-3"
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            {data.icon ? (
-              <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center p-1.5 shrink-0 border border-gray-100 dark:border-white/10">
-                <img
-                  src={data.icon}
-                  className="w-full h-full object-contain"
-                  alt="icon"
-                />
-              </div>
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/10 to-indigo-500/10 flex items-center justify-center shrink-0 border border-purple-500/10 text-purple-600 dark:text-purple-300 text-sm font-bold">
-                {data.label.slice(0, 2).toUpperCase()}
-              </div>
-            )}
-
-            <div className="flex flex-col min-w-0">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base leading-tight truncate">
-                {data.label}
-              </h3>
-              {data.role && (
-                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-0.5">
-                  {data.role}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Chevron Indicator */}
-          <motion.div
-            animate={{ rotate: expanded ? 180 : 0 }}
-            className={`text-gray-400 dark:text-gray-500 shrink-0 mt-2 transition-colors ${
-              expanded ? "text-purple-500 dark:text-purple-400" : ""
-            }`}
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </motion.div>
-        </motion.div>
-
-        {/* Expanded Content */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-4 pt-4 border-t border-gray-100 dark:border-white/10 space-y-3"
-            >
-              {/* Description */}
-              {data.description && (
-                <div className="group/item">
-                  <div className="flex items-center gap-2 mb-1.5 text-gray-400 dark:text-gray-500">
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 12h16M4 18h7"
-                      />
-                    </svg>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">
-                      Description
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed pl-5.5 border-l-2 border-gray-100 dark:border-white/5">
-                    {data.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Path Info */}
-              {data.fullPath && (
-                <div className="group/item">
-                  <div className="flex items-center gap-2 mb-1.5 text-gray-400 dark:text-gray-500">
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                      />
-                    </svg>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">
-                      Source Path
-                    </span>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-black/40 rounded-lg p-2 border border-gray-100 dark:border-white/5 font-mono text-[11px] text-gray-500 dark:text-gray-400 break-all leading-tight">
-                    {data.fullPath}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty state if no extra info */}
-              {!data.description && !data.fullPath && (
-                <p className="text-xs text-gray-400 italic text-center py-2">
-                  No additional details available.
-                </p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Connection Indicator (Visual Top) */}
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="w-1.5 h-1.5 rounded-full bg-white" />
       </div>
 
-      {/* Bottom Color Bar (Decoration) */}
-      <div
-        className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 transform origin-left transition-transform duration-300 ${
-          expanded ? "scale-x-100" : "scale-x-0"
-        }`}
-      />
+      {/* Icon Area */}
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center p-3 mb-3 bg-white/10 backdrop-blur-md shadow-inner border border-white/20">
+        {data.icon ? (
+          <img
+            src={data.icon}
+            alt=""
+            className="w-full h-full object-contain brightness-0 invert"
+          />
+        ) : (
+          <span className="text-xl font-bold text-white">
+            {data.label?.charAt(0).toUpperCase()}
+          </span>
+        )}
+      </div>
 
-      {/* Source Handle (Output) - Bottom */}
+      {/* Content Area */}
+      <div className="text-center w-full">
+        <h3 className="text-sm font-bold leading-tight mb-1 text-white drop-shadow-sm">
+          {data.label}
+        </h3>
+        <p className="text-[10px] uppercase tracking-wider font-semibold text-white/60 truncate">
+          {data.role || data.description?.slice(0, 20) || "Component"}
+        </p>
+      </div>
+
+      {/* Source Handle */}
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white dark:!border-[#1a1a1a] !-bottom-1.5 !left-1/2 !-translate-x-1/2 transition-all group-hover:!bg-purple-400"
+        className="!w-4 !h-1.5 !rounded-full !bg-white !border-none transition-colors opacity-0 group-hover:opacity-100"
+      />
+
+      {/* Auxiliary Handles for routing */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!opacity-0"
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="left"
+        className="!opacity-0"
       />
     </motion.div>
   );
 };
 
-export default InfoNode;
+export default memo(InfoNode);

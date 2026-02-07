@@ -104,7 +104,7 @@ const ForgotPasswordPage = () => {
 
     try {
       const response = await authService.verifyOtp(email.trim(), otp.trim());
-      console.log("verify-otp response:", response);
+      // console.log("verify-otp response:", response);
       // Check multiple possible token field names
       const tokenValue =
         response.token ||
@@ -112,7 +112,7 @@ const ForgotPasswordPage = () => {
         (response as any).access_token;
       if (tokenValue) {
         setResetToken(tokenValue);
-        console.log("Token captured:", tokenValue);
+        // console.log("Token captured");
       } else {
         console.warn("No token found in response!");
       }
@@ -144,10 +144,7 @@ const ForgotPasswordPage = () => {
     setError("");
 
     try {
-      console.log("Sending change-password:", {
-        token: resetToken,
-        new_password: password,
-      });
+      // console.log("Sending change-password:", { ... });
       await authService.changePassword(resetToken, password);
       setStep("success");
     } catch (err: unknown) {

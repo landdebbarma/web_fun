@@ -1,4 +1,4 @@
-// ./hooks/useFlowdata.ts
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { Node, Edge } from "reactflow";
 import { MarkerType, useNodesState, useEdgesState } from "reactflow";
 
@@ -23,131 +23,249 @@ export function useFlowData() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
+  // State for interactive expansion
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+  const allFoldersRef = useRef<string[]>([]);
+
+  // HMR/State Fix: Ensure edges are solid and gray even if they were created with old code
+  useEffect(() => {
+    setEdges((eds) =>
+      eds.map((e) => {
+        // If edge has dash array (dotted) or is animated or is purple, fix it
+        if (
+          e.animated ||
+          e.style?.strokeDasharray ||
+          e.style?.stroke === "#a855f7"
+        ) {
+          return {
+            ...e,
+            type: "default",
+            animated: false,
+            style: {
+              ...e.style,
+              stroke: "#94a3b8",
+              strokeWidth: 2,
+              strokeDasharray: undefined,
+            },
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 20,
+              height: 20,
+              color: "#94a3b8",
+            },
+          };
+        }
+        return e;
+      }),
+    );
+  }, [setEdges]);
+
+  // Toggle expansion of a folder
+  const toggleFolder = useCallback((folderPath: string) => {
+    setExpandedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderPath)) {
+        next.delete(folderPath);
+      } else {
+        next.add(folderPath);
+      }
+      return next;
+    });
+  }, []);
+
+  // Helper to remove trailing slashes and normalize
+  const normalizePath = (path: string) => {
+    return path.replace(/\/+$/, "");
+  };
+
+  const createTreeFromFolders = useCallback(
+    (rawFolders: string[]) => {
+      // 1. Normalize all paths
+      const folders = Array.from(new Set(rawFolders.map(normalizePath))).sort();
+
+      // 2. Build Tree Structure
+      type TreeNode = {
+        id: string; // full path
+        name: string; // segment name
+        children: TreeNode[];
+        isOpen: boolean;
+        // Layout properties
+        width: number;
+        x: number;
+        y: number;
+      };
+
+      const rootNodes: TreeNode[] = [];
+      const nodeMap = new Map<string, TreeNode>();
+
+      // Initialize all nodes
+      folders.forEach((path) => {
+        const parts = path.split("/");
+        const name = parts[parts.length - 1];
+        const node: TreeNode = {
+          id: path,
+          name,
+          children: [],
+          isOpen: expandedPaths.has(path),
+          width: 0,
+          x: 0,
+          y: 0,
+        };
+        nodeMap.set(path, node);
+      });
+
+      // Build hierarchy
+      folders.forEach((path) => {
+        const parts = path.split("/");
+        const node = nodeMap.get(path)!;
+
+        if (parts.length === 1) {
+          rootNodes.push(node);
+        } else {
+          // Find parent
+          const parentPath = parts.slice(0, parts.length - 1).join("/");
+          const parent = nodeMap.get(parentPath);
+          if (parent) {
+            parent.children.push(node);
+          } else {
+            rootNodes.push(node);
+          }
+        }
+      });
+
+      // 3. Layout Algorithm
+      const NODE_WIDTH = 180;
+      const X_GAP = 50;
+      const Y_GAP = 120;
+
+      // Calculate subtree widths (Post-order)
+      const calculateWidths = (node: TreeNode): number => {
+        if (!node.isOpen || node.children.length === 0) {
+          node.width = NODE_WIDTH;
+          return NODE_WIDTH;
+        }
+
+        let childrenWidth = 0;
+        node.children.forEach((child, index) => {
+          childrenWidth += calculateWidths(child);
+          if (index < node.children.length - 1) childrenWidth += X_GAP;
+        });
+
+        node.width = Math.max(NODE_WIDTH, childrenWidth);
+        return node.width;
+      };
+
+      // Assign coordinates (Pre-order)
+      const assignCoordinates = (node: TreeNode, x: number, y: number) => {
+        node.x = x;
+        node.y = y;
+
+        if (node.isOpen && node.children.length > 0) {
+          // Calculate total width of children group
+          let childrenTotalWidth = 0;
+          node.children.forEach((child, i) => {
+            childrenTotalWidth += child.width;
+            if (i < node.children.length - 1) childrenTotalWidth += X_GAP;
+          });
+
+          // Start position for the first child
+          let childStartX = x - childrenTotalWidth / 2;
+
+          node.children.forEach((child) => {
+            const childCenter = childStartX + child.width / 2;
+            assignCoordinates(child, childCenter, y + Y_GAP);
+            childStartX += child.width + X_GAP;
+          });
+        }
+      };
+
+      // Run Layout
+      rootNodes.forEach((root) => {
+        calculateWidths(root);
+      });
+
+      let currentRootX = 0;
+
+      rootNodes.forEach((root) => {
+        const rootCenter = currentRootX + root.width / 2;
+        assignCoordinates(root, rootCenter, 50);
+        currentRootX += root.width + X_GAP;
+      });
+
+      // 4. Generate React Flow Nodes & Edges
+      const newNodes: Node[] = [];
+      const newEdges: Edge[] = [];
+
+      const traverseAndCreate = (node: TreeNode) => {
+        // Create Node
+        const hasChildren = node.children.length > 0;
+        newNodes.push({
+          id: node.id,
+          position: { x: node.x, y: node.y },
+          data: {
+            label: node.name,
+            fullPath: node.id, // Normalized path
+            description: hasChildren
+              ? node.isOpen
+                ? "Collapse Folder"
+                : "Expand Folder"
+              : "File / Component",
+            role: hasChildren ? "Folder" : "File",
+          },
+          type: "infoNode",
+        });
+
+        // Create Edges to children (only if open)
+        if (node.isOpen) {
+          node.children.forEach((child) => {
+            newEdges.push({
+              id: `e-${node.id}-${child.id}`,
+              source: node.id,
+              target: child.id,
+              type: "smoothstep", // detailed orthogonal lines
+              style: { stroke: "#94a3b8", strokeWidth: 2 },
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+              },
+            });
+            traverseAndCreate(child);
+          });
+        }
+      };
+
+      rootNodes.forEach((root) => traverseAndCreate(root));
+
+      setNodes(newNodes);
+      setEdges(newEdges);
+    },
+    [expandedPaths, setNodes, setEdges],
+  );
+
+  // Re-generate tree whenever expanded paths change or base data changes
+  useEffect(() => {
+    if (allFoldersRef.current.length > 0) {
+      createTreeFromFolders(allFoldersRef.current);
+    }
+  }, [expandedPaths, createTreeFromFolders]);
+
   const updateFlowFromAI = (result: AIResult) => {
-    console.log("🎨 Updating flow with result:", result);
+    // console.log("🎨 Updating flow with result:", result);
 
     // Try to use component_tree if available
     if (
       result.component_tree?.folders &&
       result.component_tree.folders.length > 0
     ) {
+      allFoldersRef.current = result.component_tree.folders;
+      // Initialize with root folders expanded if you want, or start collapsed
+      // For now, let's start with empty set (collapsed) or maybe just root?
+      // createTreeFromFolders will handle initial render based on allFoldersRef
       createTreeFromFolders(result.component_tree.folders);
     }
     // Fallback to tech_stack if no component tree
     else if (result.tech_stack && result.tech_stack.length > 0) {
       createTechStackFlow(result.tech_stack);
     }
-  };
-
-  const createTreeFromFolders = (folders: string[]) => {
-    const newNodes: Node[] = [];
-    const newEdges: Edge[] = [];
-
-    // Ensure all parent paths exist
-    const allFolders = new Set<string>();
-    folders.forEach((folder) => {
-      allFolders.add(folder);
-
-      // Add all parent paths
-      const parts = folder.split("/");
-      for (let i = 1; i < parts.length; i++) {
-        const parentPath = parts.slice(0, i).join("/");
-        if (parentPath) {
-          allFolders.add(parentPath);
-        }
-      }
-    });
-
-    const folderArray = Array.from(allFolders).sort();
-
-    // Group folders by depth
-    const foldersByDepth: { [key: number]: string[] } = {};
-
-    folderArray.forEach((folder) => {
-      const depth = folder.split("/").length - 1;
-      if (!foldersByDepth[depth]) {
-        foldersByDepth[depth] = [];
-      }
-      foldersByDepth[depth].push(folder);
-    });
-
-    const verticalSpacing = 200; // Increased for vertical level separation
-    const horizontalSpacing = 350; // Width for nodes side-by-side
-
-    let nodeId = 0;
-    const folderToNodeId: { [key: string]: string } = {};
-
-    // Create nodes for each depth level
-    Object.keys(foldersByDepth)
-      .sort((a, b) => Number(a) - Number(b))
-      .forEach((depthStr) => {
-        const depth = Number(depthStr);
-        const foldersAtDepth = foldersByDepth[depth];
-
-        foldersAtDepth.forEach((folder, indexAtDepth) => {
-          const id = `node-${nodeId++}`;
-          const label = folder.split("/").pop() || folder;
-
-          // Calculate position for Top-to-Bottom flow:
-          // x is determined by indexAtDepth (siblings spread horizontally)
-          // y is determined by depth (levels go down)
-          const x = indexAtDepth * horizontalSpacing + 80;
-          const y = depth * verticalSpacing + 80;
-
-          newNodes.push({
-            id,
-            position: { x, y },
-            data: {
-              label,
-              fullPath: folder,
-            },
-            type: "infoNode",
-          });
-
-          folderToNodeId[folder] = id;
-        });
-      });
-
-    // Create edges AFTER all nodes are created
-    folderArray.forEach((folder) => {
-      const depth = folder.split("/").length - 1;
-
-      if (depth > 0) {
-        const parentPath = folder.substring(0, folder.lastIndexOf("/"));
-        const parentId = folderToNodeId[parentPath];
-        const childId = folderToNodeId[folder];
-
-        if (parentId && childId) {
-          newEdges.push({
-            id: `edge-${childId}`,
-            source: parentId,
-            target: childId,
-            type: "default", // Bezier curve for smoother connections
-            animated: true,
-            style: {
-              stroke: "#a855f7", // Keep the purple brand color
-              strokeWidth: 2,
-              strokeDasharray: "5, 5", // Dashed pattern matching the image
-            },
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              width: 20,
-              height: 20,
-              color: "#a855f7",
-            },
-          });
-        }
-      }
-    });
-
-    console.log(
-      "📊 Created hierarchy - Nodes:",
-      newNodes.length,
-      "Edges:",
-      newEdges.length
-    );
-    setNodes(newNodes);
-    setEdges(newEdges);
   };
 
   const createTechStackFlow = (tech_stack: string[]) => {
@@ -162,12 +280,21 @@ export function useFlowData() {
       id: `e-${index}`,
       source: `tech-${index}`,
       target: `tech-${index + 1}`,
-      animated: true,
+      type: "default",
+      animated: false,
+      style: { stroke: "#94a3b8", strokeWidth: 2 },
     }));
 
     setNodes(newNodes);
     setEdges(newEdges);
   };
 
-  return { nodes, edges, onNodesChange, onEdgesChange, updateFlowFromAI };
+  return {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    updateFlowFromAI,
+    toggleFolder,
+  };
 }

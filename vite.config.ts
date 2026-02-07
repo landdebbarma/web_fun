@@ -1,30 +1,43 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  console.log('Loaded env:', env.VITE_API_BASE_URL);
+  return {
   plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
+  esbuild: {
+    drop: ['console', 'debugger'],
+  },
   server: {
     proxy: {
       // Proxy Google OAuth - both login and callback
       '/auth/google': {
-        target: 'http://localhost:8006',
-        changeOrigin: true,
+        target: env.VITE_API_BASE_URL,
+        changeOrigin: false,
         selfHandleResponse: true,
+        bypass: (req) => {
+          if (req.url?.includes('callback')) {
+            return req.url;
+          }
+        },
         configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('Proxying request:', req.url);
             proxyReq.setHeader('X-Forwarded-Host', 'localhost:5173');
             proxyReq.setHeader('X-Forwarded-Port', '5173');
             proxyReq.setHeader('X-Forwarded-Proto', 'http');
           });
           
           proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('Received response from backend:', proxyRes.statusCode, req.url);
             // Check if this is the callback endpoint
             if (req.url?.includes('/auth/google/callback')) {
               let body = '';
@@ -32,6 +45,7 @@ export default defineConfig({
                 body += chunk.toString();
               });
               proxyRes.on('end', () => {
+                console.log('Backend response body:', body);
                 try {
                   const data = JSON.parse(body);
                   const token = data.access_token || data.token || data.accessToken;
@@ -76,37 +90,37 @@ export default defineConfig({
         }
       },
       '/auth/login': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
       },
       '/auth/register': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
       },
       '/auth/forgot-password': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
       },
       '/auth/verify-otp': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
       },
       '/auth/change-password': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
       },
       '/users': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
         rewrite: (path) => path
       },
       '/generate': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
         rewrite: (path) => path
       },
       '/chat': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
         selfHandleResponse: true, // Required for streaming
         configure: (proxy) => {
@@ -125,11 +139,12 @@ export default defineConfig({
         }
       },
       '/projects': {
-        target: 'http://localhost:8006',
+        target: env.VITE_API_BASE_URL,
         changeOrigin: true,
         rewrite: (path) => path
       }
     }
+  }
   }
 })
 
