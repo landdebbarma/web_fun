@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sample HTML Page</title>
+    <title>React App with Tailwind CSS</title>
+    <link href="./style.css" rel="stylesheet">
+    <style>
+        @keyframes fall {
+            to {
+                transform: translateY(calc(100vh + 100px));
+            }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head> 
 <body>
-    <h1>Welcome to the Sample HTML Page</h1>
-    <p>This is a simple HTML document structure.</p>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
